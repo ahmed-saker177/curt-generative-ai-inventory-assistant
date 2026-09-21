@@ -1,0 +1,11 @@
+[project]
+name = "curt"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=3.0.6",
+    "streamlit>=1.64.0",
+    "watchdog>=6.0.0",
+]
