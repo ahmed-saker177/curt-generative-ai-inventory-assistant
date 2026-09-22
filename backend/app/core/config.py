@@ -19,11 +19,11 @@ class Settings:
     @classmethod
     def from_environment(cls) -> "Settings":
         """Load local development variables without overriding deployed settings."""
-        load_dotenv(override=False)
+        load_dotenv(override=True)
         return cls(
             llm_provider=os.getenv("LLM_PROVIDER", "groq").strip().lower(),
             groq_api_key=os.getenv("GROQ_API_KEY"),
-            groq_model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+            groq_model=os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
             gemini_api_key=os.getenv("GEMINI_API_KEY"),
-            gemini_model=os.getenv("GEMINI_MODEL", "gemini-flash-latest"),
+            gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp"),
         )

@@ -15,6 +15,8 @@ services:
         sync: false # Prompts you to enter your Groq API key in the Render dashboard
       - key: LLM_PROVIDER
         value: groq
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
       - key: CURT_DB_PATH
         value: ./curt_inventory.db
       - key: PYTHONUNBUFFERED

@@ -4,11 +4,12 @@ Phase 1 is a deterministic, rule-based inventory assistant for CURT. It uses a s
 
 ## Completed Phase 1 features
 
-- SQLite `parts` table with 11 seeded motorsport inventory parts.
-- Data-access layer in `db.py` for inventory queries and quantity updates.
+- SQLite `parts` table with **52 seeded motorsport inventory parts** across 10 Formula Student engineering subsystems.
+- Data-access layer in `db.py` for inventory queries and quantity updates with auto-sync seeding.
 - Rule-based free-text questions for quantities, locations, and categories.
 - Fuzzy matching for misspelled part names, plus clear responses for unknown and ambiguous requests.
 - Streamlit chat interface with a live inventory sidebar, metrics, filtering, example prompts, and follow-up questions.
+- Comprehensive deployment guide in [DEPLOYMENT.md](file:///d:/ahmed/AI-Projects/CURT/DEPLOYMENT.md).
 
 ## Architecture
 
