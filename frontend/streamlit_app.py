@@ -33,20 +33,23 @@ STOCK_LOW = "⚠️ Low Stock Only (≤ 5)"
 STOCK_HEALTHY = "✅ In Stock (> 5)"
 
 QUICK_PROMPTS_PHASE1 = [
-    ("🛑 Brake Pads Qty", "How many brake pads do we have?"),
-    ("📍 ECU Location", "Where is the ECU?"),
-    ("🔧 List Brakes", "List all items in Brakes."),
-    ("⚠️ Low Stock", "Which items are low in stock?"),
-    ("📦 Full Inventory", "Show all items in inventory."),
+    # (icon, title, subtitle, query)
+    ("🛑", "Brake Pads Stock", "Count available units", "How many brake pads do we have?"),
+    ("📍", "ECU Location", "Find storage rack", "Where is the ECU?"),
+    ("🔧", "Browse Brakes", "List category items", "List all items in Brakes."),
+    ("⚠️", "Low Stock Alert", "Items running short", "Which items are low in stock?"),
+    ("📦", "Full Inventory", "See everything", "Show all items in inventory."),
 ]
 
 QUICK_PROMPTS_PHASE2 = [
-    ("🛑 Stock & Location", "How many brake pads do we have left, and where are they stored?"),
-    ("⚠️ Shortage Flag", "Check the ECU count and flag a shortage if it's running low."),
-    ("🔧 Category Breakdown", "List all items in the Brakes category with total count and units."),
-    ("📍 Workshop Search", "What parts do we currently have stored in the Mechanical Workshop?"),
-    ("📊 Telemetry Summary", "Give me a high-level inventory telemetry summary."),
+    # (icon, title, subtitle, query)
+    ("🛑", "Stock & Location", "Multi-field check via tools", "How many brake pads do we have left, and where are they stored?"),
+    ("⚠️", "Flag Shortage", "ECU low-stock alert", "Check the ECU count and flag a shortage if it's running low."),
+    ("🔧", "Category Details", "Brakes with totals", "List all items in the Brakes category with total count and units."),
+    ("📍", "Workshop Search", "Parts at a location", "What parts are stored in the Mechanical Workshop?"),
+    ("📊", "Telemetry Summary", "High-level overview", "Give me a high-level inventory telemetry summary."),
 ]
+
 
 
 # Page configuration
@@ -157,6 +160,43 @@ def inject_custom_styles() -> None:
             opacity: 0.8;
             margin-top: -0.3rem;
             margin-bottom: 0.6rem;
+        }
+
+        /* Quick Prompt Cards */
+        .qp-card {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+            padding: 0.9rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(225, 6, 0, 0.18);
+            background: linear-gradient(135deg, rgba(225, 6, 0, 0.05) 0%, rgba(20, 20, 25, 0.02) 100%);
+            cursor: pointer;
+            transition: all 0.22s ease;
+            width: 100%;
+            text-align: left;
+            min-height: 80px;
+        }
+        .qp-card:hover {
+            border-color: #E10600;
+            background: linear-gradient(135deg, rgba(225, 6, 0, 0.1) 0%, rgba(20, 20, 25, 0.04) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(225, 6, 0, 0.15);
+        }
+        .qp-icon {
+            font-size: 1.4rem;
+            line-height: 1;
+        }
+        .qp-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.01em;
+        }
+        .qp-sub {
+            font-size: 0.72rem;
+            opacity: 0.6;
+            font-style: italic;
         }
         </style>
         """,
@@ -577,11 +617,33 @@ def render_intro() -> None:
     )
 
     prompts = QUICK_PROMPTS_PHASE1 if is_phase1 else QUICK_PROMPTS_PHASE2
-    st.write("##### 💡 Suggested Questions to Try")
-    prompt_cols = st.columns(len(prompts))
-    for idx, (label, query) in enumerate(prompts):
-        with prompt_cols[idx]:
-            if st.button(label, key=f"quick_btn_{idx}", width="stretch"):
+
+    # Render section header
+    section_label = "🔧 Rule-Based Queries" if is_phase1 else "🤖 LLM Agent Queries"
+    st.markdown(
+        f"<div style='font-size:0.8rem; font-weight:600; opacity:0.7; text-transform:uppercase; "
+        f"letter-spacing:0.06em; margin-bottom:0.5rem;'>{section_label}</div>",
+        unsafe_allow_html=True,
+    )
+
+    # Render cards in columns — each card is a Streamlit button styled via HTML
+    cols = st.columns(len(prompts))
+    for idx, (icon, title, subtitle, query) in enumerate(prompts):
+        with cols[idx]:
+            card_html = (
+                f"<div class='qp-card'>"
+                f"<div class='qp-icon'>{icon}</div>"
+                f"<div class='qp-title'>{title}</div>"
+                f"<div class='qp-sub'>{subtitle}</div>"
+                f"</div>"
+            )
+            st.markdown(card_html, unsafe_allow_html=True)
+            if st.button(
+                "▶",
+                key=f"qp_btn_{idx}",
+                help=query,
+                use_container_width=True,
+            ):
                 st.session_state.pending_prompt = query
                 st.rerun()
 

@@ -231,10 +231,11 @@ INVENTORY_TOOL_DEFINITIONS: list[dict[str, Any]] = [
     {
         "type": "function",
         "name": "list_low_stock",
-        "description": "List parts at or below a stock threshold. Use the default when none is requested.",
+        "description": "List parts at or below a stock threshold. Use the default threshold when none is explicitly provided.",
         "parameters": {
             "type": "object",
             "properties": {"threshold": {"type": "integer", "minimum": 0}},
+            # threshold is optional — do NOT mark as required so models use the backend default
         },
     },
     {
@@ -267,8 +268,20 @@ INVENTORY_TOOL_DEFINITIONS: list[dict[str, Any]] = [
     },
 ]
 
+def _groq_patch(definition: dict[str, Any]) -> dict[str, Any]:
+    """Patch a tool definition for Groq: remove optional integer params to prevent Groq
+    from sending `null` values that fail JSON-schema validation."""
+    import copy
+    patched = copy.deepcopy(definition)
+    if patched["name"] == "list_low_stock":
+        # Groq sends `{"threshold": null}` for optional integer params, which fails validation.
+        # Remove threshold from properties so Groq never sends it; the backend default applies.
+        patched["parameters"]["properties"] = {}
+    return patched
+
+
 GROQ_TOOL_DEFINITIONS = [
-    {"type": "function", "function": definition}
+    {"type": "function", "function": _groq_patch(definition)}
     for definition in INVENTORY_TOOL_DEFINITIONS
 ]
 
