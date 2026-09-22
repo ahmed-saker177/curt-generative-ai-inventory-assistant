@@ -1,0 +1,41 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      CURT_DB_PATH: /data/curt_inventory.db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+      - curt_inventory_data:/data
+    command: uv run uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      BACKEND_URL: http://api:8000
+      CURT_DB_PATH: /data/curt_inventory.db
+      STREAMLIT_SERVER_RUN_ON_SAVE: "true"
+    depends_on:
+      - api
+    ports:
+      - "8502:8501"
+    volumes:
+      - ./frontend:/app/frontend
+      - ./backend:/app/backend
+      - ./phase1:/app/phase1
+      - curt_inventory_data:/data
+    command: uv run streamlit run frontend/streamlit_app.py --server.address=0.0.0.0 --server.port=8501 --server.runOnSave=true
+
+volumes:
+  curt_inventory_data:

@@ -2,8 +2,8 @@
 
 import unittest
 
-from db import get_all_parts, init_db
-from phase1_assistant import answer_question_with_suggestions
+from backend.app.data.db import get_all_parts, init_db
+from phase1.assistant import answer_question_with_suggestions
 
 
 class Phase1AssistantTests(unittest.TestCase):

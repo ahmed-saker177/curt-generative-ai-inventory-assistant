@@ -21,7 +21,7 @@ import difflib
 import re
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from db import (
+from backend.app.data.db import (
     get_all_categories,
     get_all_locations,
     get_all_part_names,
@@ -129,7 +129,8 @@ EXISTENCE_PATTERNS = [
     "is there",
     "are there",
     "do you have",
-    "is",
+    "is available",
+    "are available",
     "available",
 ]
 
@@ -271,10 +272,15 @@ def detect_intent(raw_text: str) -> str:
         INTENT_LOCATIONS: 0,
     }
 
-    # All Inventory (+5)
-    for pattern in ALL_INVENTORY_PATTERNS:
-        if pattern in text:
-            scores[INTENT_ALL_INVENTORY] += 5
+    # All Inventory (+5) - only when not scoped by 'in <category/location>'
+    has_in_qualifier = " in " in clean_raw or clean_raw.endswith(" in") or "items in" in clean_raw or "parts in" in clean_raw
+    if not has_in_qualifier:
+        for pattern in ALL_INVENTORY_PATTERNS:
+            if pattern in text:
+                scores[INTENT_ALL_INVENTORY] += 5
+    else:
+        if any(marker in text for marker in ["list", "show", "items", "parts"]):
+            scores[INTENT_CATEGORY_LIST] += 5
 
     # Low Stock (+6)
     for pattern in LOW_STOCK_PATTERNS:
@@ -285,10 +291,11 @@ def detect_intent(raw_text: str) -> str:
     if "low" in clean_raw.split() and any(w in clean_raw.split() for w in ["stock", "quantity", "inventory"]):
         scores[INTENT_LOW_STOCK] += 6
 
-    # Category Count (+5)
+    # Category Count (+7)
     for pattern in CATEGORY_COUNT_PATTERNS:
         if pattern in text:
-            scores[INTENT_CATEGORY_COUNT] += 5
+            scores[INTENT_CATEGORY_COUNT] += 7
+            scores[INTENT_QUANTITY] -= 6
 
     # Categories (+5)
     for pattern in CATEGORIES_PATTERNS:

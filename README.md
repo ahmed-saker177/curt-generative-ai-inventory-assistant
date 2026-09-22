@@ -14,15 +14,16 @@ Phase 1 is a deterministic, rule-based inventory assistant for CURT. It uses a s
 
 ```text
 Phase 1
-Streamlit UI -> phase1_assistant.py -> db.py -> SQLite (curt_inventory.db)
+Streamlit UI -> phase1/assistant.py -> backend/app/data/db.py -> SQLite
 
 Phase 2
-Streamlit UI -> FastAPI -> llm_service.py -> controlled inventory_tools.py -> db.py -> SQLite
-                                      |                         |
-                                      +--> Groq or Gemini <-----+
+Streamlit UI -> FastAPI routes -> services/llm_service.py -> tools/inventory_tools.py
+                  |                     |                            |
+                  |                     +--> Groq or Gemini           |
+                  +--> schemas + data/db.py -----------------------> SQLite
 ```
 
-`phase1_assistant.py` identifies an intent with keyword and rule scoring, extracts an item/category/location, then retrieves the answer through `db.py`. The assistant never writes raw SQL itself.
+`phase1/assistant.py` identifies an intent with keyword and rule scoring, extracts an item/category/location, then retrieves the answer through `backend/app/data/db.py`. The assistant never writes raw SQL itself.
 
 For Phase 2, FastAPI owns the API, session memory, and LLM orchestration. The LLM chooses from an allow-list of tools, but the backend validates and executes every call locally. It has no direct SQLite access.
 
@@ -30,8 +31,8 @@ For Phase 2, FastAPI owns the API, session memory, and LLM orchestration. The LL
 
 1. Install the project dependencies with `uv sync`.
 2. Copy `.env.example` to `.env` and configure one LLM provider.
-3. Start the Phase 1 frontend with `uv run streamlit run streamlit_app.py`.
-4. Start the Phase 2 backend with `uv run uvicorn main:app --reload`.
+3. Start the Phase 1 frontend with `uv run streamlit run frontend/streamlit_app.py`.
+4. Start the Phase 2 backend with `uv run uvicorn backend.app.main:app --reload`.
 
 FastAPI docs are available at `http://127.0.0.1:8000/docs` while the backend is running.
 
@@ -97,3 +98,28 @@ Copy-Item .env.example .env
 ```
 
 The FastAPI backend loads this file on startup. `.env` is ignored by Git, while `.env.example` is safe to commit. The API key remains server-side: Streamlit will call FastAPI, and only FastAPI calls Groq or Gemini.
+
+## Project structure
+
+```text
+backend/app/
+  api/routes/       FastAPI route modules
+  core/             Environment-backed settings
+  data/             Shared SQLite data-access layer
+  schemas/          Pydantic request and response models
+  services/         Conversation memory and LLM orchestration
+  tools/            Controlled function-calling tools
+frontend/           Streamlit user interface
+phase1/             Phase 1 rule-based assistant logic
+tests/              Phase 1, API, memory, and tool tests
+```
+
+## Docker Compose
+
+After creating `.env` (required for LLM chat), start the full application with:
+
+```bash
+docker compose up --build
+```
+
+This starts FastAPI at `http://localhost:8000` and Streamlit at `http://localhost:8501`. Both containers mount the same `curt_inventory_data` Docker volume, so Phase 1 and Phase 2 use exactly the same SQLite database.

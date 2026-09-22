@@ -1,0 +1,1 @@
+"""CURT FastAPI application."""

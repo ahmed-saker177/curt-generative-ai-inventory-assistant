@@ -6,13 +6,14 @@ Handles SQLite connection management, table initialization, seeding, and CRUD op
 Both Phase 1 and Phase 2 assistant modules interface with this layer.
 """
 
+import sqlite3
+import os
 from contextlib import contextmanager
 from pathlib import Path
-import sqlite3
 from typing import Any, Dict, List, Optional
 
 
-DB_PATH = Path(__file__).parent / "curt_inventory.db"
+DB_PATH = Path(os.getenv("CURT_DB_PATH", "curt_inventory.db")).resolve()
 
 SEED_PARTS = [
     ("Brake Pads", 12, "Brakes", "Mechanical Workshop"),
@@ -35,6 +36,7 @@ SEED_PARTS = [
 
 def get_connection() -> sqlite3.Connection:
     """Return a new SQLite connection with dict-like row access."""
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
