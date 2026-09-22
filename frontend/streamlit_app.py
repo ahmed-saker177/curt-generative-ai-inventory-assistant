@@ -32,12 +32,20 @@ STOCK_ALL = "All Stock Levels"
 STOCK_LOW = "⚠️ Low Stock Only (≤ 5)"
 STOCK_HEALTHY = "✅ In Stock (> 5)"
 
-QUICK_PROMPTS = [
-    ("🛑 Brake Pads Quantity", "How many brake pads do we have left?"),
-    ("📍 ECU Location", "Where is the ECU stored?"),
-    ("🔧 List Brakes Category", "List all items in Brakes."),
-    ("⚠️ Check Low Stock", "What items are running low on stock?"),
-    ("📦 Full Inventory Status", "Show full inventory summary."),
+QUICK_PROMPTS_PHASE1 = [
+    ("🛑 Brake Pads Qty", "How many brake pads do we have?"),
+    ("📍 ECU Location", "Where is the ECU?"),
+    ("🔧 List Brakes", "List all items in Brakes."),
+    ("⚠️ Low Stock", "Which items are low in stock?"),
+    ("📦 Full Inventory", "Show all items in inventory."),
+]
+
+QUICK_PROMPTS_PHASE2 = [
+    ("🛑 Stock & Location", "How many brake pads do we have left, and where are they stored?"),
+    ("⚠️ Shortage Flag", "Check the ECU count and flag a shortage if it's running low."),
+    ("🔧 Category Breakdown", "List all items in the Brakes category with total count and units."),
+    ("📍 Workshop Search", "What parts do we currently have stored in the Mechanical Workshop?"),
+    ("📊 Telemetry Summary", "Give me a high-level inventory telemetry summary."),
 ]
 
 
@@ -163,38 +171,44 @@ def get_backend_url() -> str:
 
 def init_session_state() -> None:
     """Initialize state variables for the current Streamlit session."""
-    # Per-session message store: {session_id: [msg, ...]}
-    st.session_state.setdefault("session_messages", {})
+    # Dedicated message store for Phase 1 (deterministic rule-based)
+    st.session_state.setdefault("phase1_messages", [])
+
+    # Dedicated per-session message store for Phase 2 (LLM agent): {session_id: [msg, ...]}
+    st.session_state.setdefault("phase2_sessions", {})
+    initial_p2_sid = str(uuid4())
+    st.session_state.setdefault("phase2_session_id", initial_p2_sid)
+    st.session_state.setdefault("session_id", initial_p2_sid)  # alias for backwards compatibility
+    st.session_state.setdefault("phase2_known_sessions", [initial_p2_sid])
+    st.session_state.phase2_sessions.setdefault(initial_p2_sid, [])
+
     st.session_state.setdefault("pending_prompt", None)
-    initial_sid = str(uuid4())
-    st.session_state.setdefault("session_id", initial_sid)
     st.session_state.setdefault("selected_mode", PHASE_1_MODE)
     st.session_state.setdefault("filter_category", CATEGORIES_ALL)
     st.session_state.setdefault("filter_stock", STOCK_ALL)
     st.session_state.setdefault("filter_search", "")
-    # Ordered list of known session IDs (most recent first)
-    st.session_state.setdefault("known_sessions", [st.session_state.session_id])
-    # Ensure current session is tracked
-    if st.session_state.session_id not in st.session_state.known_sessions:
-        st.session_state.known_sessions.insert(0, st.session_state.session_id)
-    # Ensure current session has a message list
-    st.session_state.session_messages.setdefault(st.session_state.session_id, [])
 
 
 def _messages() -> list:
-    """Return the message list for the active session."""
-    sid = st.session_state.session_id
-    return st.session_state.session_messages.setdefault(sid, [])
+    """Return the message list for the currently active engine mode."""
+    if st.session_state.selected_mode == PHASE_1_MODE:
+        return st.session_state.setdefault("phase1_messages", [])
+    p2_sid = st.session_state.phase2_session_id
+    return st.session_state.phase2_sessions.setdefault(p2_sid, [])
 
 
 def start_new_chat() -> None:
-    """Archive current session and start a brand-new one."""
-    new_id = str(uuid4())
-    st.session_state.session_id = new_id
-    st.session_state.session_messages[new_id] = []
+    """Start a brand-new chat for the active engine mode without affecting the other."""
     st.session_state.pending_prompt = None
-    if new_id not in st.session_state.known_sessions:
-        st.session_state.known_sessions.insert(0, new_id)
+    if st.session_state.selected_mode == PHASE_1_MODE:
+        st.session_state.phase1_messages = []
+    else:
+        new_id = str(uuid4())
+        st.session_state.phase2_session_id = new_id
+        st.session_state.session_id = new_id
+        st.session_state.phase2_sessions[new_id] = []
+        if new_id not in st.session_state.phase2_known_sessions:
+            st.session_state.phase2_known_sessions.insert(0, new_id)
 
 
 # Backward-compatibility alias
@@ -202,16 +216,16 @@ clear_chat_history = start_new_chat
 
 
 def switch_session(target_id: str) -> None:
-    """Switch the active session to target_id, preserving all message histories."""
+    """Switch the active Phase 2 session to target_id, preserving message histories."""
     target_id = target_id.strip()
-    if not target_id or target_id == st.session_state.session_id:
+    if not target_id or target_id == st.session_state.phase2_session_id:
         return
+    st.session_state.phase2_session_id = target_id
     st.session_state.session_id = target_id
     st.session_state.pending_prompt = None
-    # Ensure target session has a message list (may be empty if not yet used)
-    st.session_state.session_messages.setdefault(target_id, [])
-    if target_id not in st.session_state.known_sessions:
-        st.session_state.known_sessions.insert(0, target_id)
+    st.session_state.phase2_sessions.setdefault(target_id, [])
+    if target_id not in st.session_state.phase2_known_sessions:
+        st.session_state.phase2_known_sessions.insert(0, target_id)
 
 
 def generate_phase2_followups(last_response: str, user_question: str) -> list[str]:
@@ -353,6 +367,9 @@ def render_sidebar() -> None:
         # Engine details card
         if st.session_state.selected_mode == PHASE_1_MODE:
             st.success("🟢 **Phase 1 Active**: Local deterministic rules & exact DB queries. No API keys needed.")
+            if st.button("➕ Reset Phase 1 Chat", width="stretch", key="btn_clear_phase1"):
+                start_new_chat()
+                st.rerun()
         else:
             is_healthy = check_backend_health()
             if is_healthy:
@@ -361,21 +378,19 @@ def render_sidebar() -> None:
                 st.warning(f"🟠 **FastAPI Unreachable** (`{get_backend_url()}`)")
 
             # ── Session Management ──────────────────────────────────────────
-            st.markdown("**🆔 Session Management**")
+            st.markdown("**🆔 Phase 2 Session Management**")
 
-            active_sid = st.session_state.session_id
-            # Show truncated active ID
-            st.caption(f"Active: `{active_sid[:20]}...`")
+            active_sid = st.session_state.phase2_session_id
+            st.caption(f"Active Session: `{active_sid[:20]}...`")
 
-            # Sessions dropdown — all known sessions, active one selected
-            known = st.session_state.get("known_sessions", [active_sid])
+            known = st.session_state.get("phase2_known_sessions", [active_sid])
             session_labels = [
                 ("▶ " if sid == active_sid else "") + sid[:24] + "..." for sid in known
             ]
             chosen_label = st.selectbox(
                 "Switch session",
                 session_labels,
-                index=0,  # most recent / active is always first
+                index=0,
                 key="session_history_select",
                 help="Select a session to switch back to it and see its chat history.",
             )
@@ -385,7 +400,7 @@ def render_sidebar() -> None:
                     switch_session(chosen_full)
                     st.rerun()
 
-            if st.button("➕ New Chat", width="stretch", key="btn_new_chat_sidebar"):
+            if st.button("➕ New Chat Session", width="stretch", key="btn_new_chat_sidebar"):
                 start_new_chat()
                 st.rerun()
 
@@ -477,7 +492,8 @@ def render_sidebar() -> None:
 def submit_prompt(prompt: str) -> None:
     """Route user question to the currently active assistant mode."""
     current_mode = st.session_state.selected_mode
-    _messages().append({
+    active_msgs = _messages()
+    active_msgs.append({
         "role": "user",
         "content": prompt,
         "mode": current_mode,
@@ -485,7 +501,7 @@ def submit_prompt(prompt: str) -> None:
 
     if current_mode == PHASE_1_MODE:
         reply_text, follow_ups = answer_question_with_suggestions(prompt)
-        _messages().append(
+        active_msgs.append(
             {
                 "role": "assistant",
                 "content": reply_text,
@@ -495,7 +511,7 @@ def submit_prompt(prompt: str) -> None:
         )
     else:
         with st.spinner("🏎️ CURT AI Assistant querying tools & database..."):
-            api_result = call_phase2_api(prompt, st.session_state.session_id)
+            api_result = call_phase2_api(prompt, st.session_state.phase2_session_id)
 
         if "error" in api_result:
             reply_text = f"⚠️ {api_result['error']}"
@@ -506,20 +522,16 @@ def submit_prompt(prompt: str) -> None:
             reply_text = api_result.get("response", "No response received.")
             provider = api_result.get("provider")
             tools_used = api_result.get("tools_used", [])
-            returned_sid = api_result.get("session_id", st.session_state.session_id)
+            returned_sid = api_result.get("session_id", st.session_state.phase2_session_id)
+            st.session_state.phase2_session_id = returned_sid
             st.session_state.session_id = returned_sid
-            # Register in known sessions if new
-            if returned_sid not in st.session_state.get("known_sessions", []):
-                st.session_state.known_sessions.insert(0, returned_sid)
-            # Migrate messages to the confirmed session_id bucket
-            if returned_sid != st.session_state.session_id:
-                existing = st.session_state.session_messages.pop(st.session_state.session_id, [])
-                st.session_state.session_messages.setdefault(returned_sid, []).extend(existing)
 
-            # Generate follow-up questions contextually from the LLM reply
+            if returned_sid not in st.session_state.phase2_known_sessions:
+                st.session_state.phase2_known_sessions.insert(0, returned_sid)
+
             follow_ups_p2 = generate_phase2_followups(reply_text, prompt)
 
-        _messages().append(
+        active_msgs.append(
             {
                 "role": "assistant",
                 "content": reply_text,
@@ -536,26 +548,38 @@ def render_intro() -> None:
     if _messages():
         return
 
+    is_phase1 = st.session_state.selected_mode == PHASE_1_MODE
+    intro_title = (
+        "Phase 1: Deterministic Heuristic Assistant"
+        if is_phase1
+        else "Phase 2: LLM Agent & Function Calling"
+    )
+    intro_sub = (
+        "Fast rule-based inventory assistant. Test exact stock, locations, category queries, and typos without external APIs."
+        if is_phase1
+        else "Autonomous LLM assistant with multi-turn conversation memory, schema-validated database tools, and shortage flagging."
+    )
+    badge_label = "RULE-BASED" if is_phase1 else "LLM AGENT"
+
     st.markdown(
-        """
+        f"""
         <div class="curt-header-container">
             <div>
-                <h3 style="margin: 0; padding: 0;">Welcome to the CURT Parts Command Center</h3>
-                <div class="curt-subtitle">
-                    Inquire about real-time parts availability, storage racks, quantities, and shortage alerts.
-                </div>
+                <h3 style="margin: 0; padding: 0;">{intro_title}</h3>
+                <div class="curt-subtitle">{intro_sub}</div>
             </div>
             <div>
-                <span class="curt-badge-red">FSAE 26-27</span>
+                <span class="curt-badge-red">{badge_label}</span>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.write("##### 💡 Quick Prompts")
-    prompt_cols = st.columns(len(QUICK_PROMPTS))
-    for idx, (label, query) in enumerate(QUICK_PROMPTS):
+    prompts = QUICK_PROMPTS_PHASE1 if is_phase1 else QUICK_PROMPTS_PHASE2
+    st.write("##### 💡 Suggested Questions to Try")
+    prompt_cols = st.columns(len(prompts))
+    for idx, (label, query) in enumerate(prompts):
         with prompt_cols[idx]:
             if st.button(label, key=f"quick_btn_{idx}", width="stretch"):
                 st.session_state.pending_prompt = query

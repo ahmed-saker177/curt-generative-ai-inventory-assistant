@@ -50,11 +50,32 @@ python -m unittest discover -s tests
 
 Additional supported queries include low-stock checks, full inventory lists, category/location lists, and queries for a specific storage location.
 
-## Edge-case decisions
+## Task 6: Reflection & Edge-Case Decisions
 
-- **Unknown item:** explain that no matching inventory item was found and suggest next questions.
-- **Misspelled or partial item:** use exact, partial, and fuzzy matching against known part names.
-- **Ambiguous question:** ask the user to identify the item rather than assuming one.
+### 1. Edge-Case Decisions & Reasoning
+
+* **Misspelled or Partial Part Names:**
+  * *Implementation:* We built a 3-tier lookup hierarchy in both Phase 1 and Phase 2 tools: (1) exact case-insensitive match, (2) substring containment, and (3) Gestalt pattern matching via Python `difflib.get_close_matches` with a tuned `0.6` cutoff.
+  * *Reasoning:* Workshop team members typing quickly on mobile devices or in noisy garages frequently use colloquial abbreviations or make typos (e.g., *"brek pads"* -> *Brake Pads*). The `0.6` threshold was selected empirically to forgive spelling errors while strictly preventing false-positive matches between distinct motorsport parts (e.g., preventing *"brake discs"* from mistakenly resolving to *"brake pads"*).
+
+* **Non-Existent Items:**
+  * *Implementation:* When an item is not present in the database, the assistant explicitly states that no record exists in the CURT inventory and suggests related categories or prompts the user to check available parts.
+  * *Reasoning:* For racing teams, a hallucinated quantity or silent failure can cause catastrophic pit-lane delays. Clear negation prevents team members from assuming parts are in stock when they are not.
+
+* **Ambiguous or Incomplete Queries:**
+  * *Implementation:* If a query lacks an entity (e.g., *"How many do we have?"*), Phase 1 prompts the user directly (*"Which item do you mean?"*) and Phase 2's system prompt instructs the LLM to ask a concise clarifying follow-up rather than guessing.
+  * *Reasoning:* Guessing an arbitrary part creates user confusion and potential safety risks in motorsport inventory management.
+
+* **Engine Mode Separation (Option A):**
+  * *Implementation:* The Streamlit frontend maintains dedicated, isolated conversation histories for Phase 1 and Phase 2 within the same running session.
+  * *Reasoning:* Phase 1 is a deterministic rule-based heuristic parser without conversational memory, whereas Phase 2 is an LLM agent with multi-turn session memory (`session_id`). Isolating their message streams gives evaluators an unpolluted sandbox to independently benchmark Phase 1's keyword rules against Phase 2's agentic multi-turn follow-ups.
+
+### 2. What We Would Improve With More Time
+
+* **Vector Search & RAG for Component Manuals:** Integrate a vector database (e.g., ChromaDB or pgvector) alongside SQLite to support multimodal RAG — enabling team members to query technical datasheets, CAD assembly guides, tightening torque specs, and wiring pinouts alongside part quantities.
+* **Persistent Distributed Sessions:** Migrate from the in-memory `ConversationStore` to a Redis-backed or PostgreSQL-backed session cache, enabling horizontal scaling of FastAPI across multiple instances without losing conversation history.
+* **Real-Time Notification Webhooks:** Expand `flag_shortage` from backend log emission to active push notifications via Slack, Discord, or WhatsApp webhooks to immediately alert CURT's supply-chain and manufacturing leads.
+* **Role-Based Access Control (RBAC) & Audit Trails:** Implement team member authentication with role-based permissions (e.g., pit crew can check stock and request parts; workshop managers can modify quantities or register new components), complete with an immutable transaction log for telemetry tracking.
 
 ## Phase 2 API
 
