@@ -193,26 +193,112 @@ def inject_custom_styles() -> None:
             color: #E10600;
         }
 
-        /* Tools executed callout */
-        .curt-tools-box {
-            margin-top: 0.6rem;
-            padding: 0.45rem 0.75rem;
-            background: rgba(40, 167, 69, 0.08);
-            border: 1px solid rgba(40, 167, 69, 0.25);
+        /* Tools executed collapsible disclosure (>) */
+        details.curt-tools-disclosure {
+            margin-top: 0.55rem;
+            border: 1px solid rgba(40, 167, 69, 0.28);
+            background: rgba(40, 167, 69, 0.04);
             border-radius: 8px;
+            padding: 0.35rem 0.65rem;
+            transition: all 0.2s ease;
+        }
+        details.curt-tools-disclosure[open] {
+            background: rgba(40, 167, 69, 0.08);
+        }
+        details.curt-tools-disclosure summary {
+            cursor: pointer;
             font-size: 0.8rem;
+            font-weight: 600;
+            color: #28a745;
+            user-select: none;
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
             gap: 0.4rem;
+            list-style: none;
+        }
+        details.curt-tools-disclosure summary::-webkit-details-marker {
+            display: none;
+        }
+        details.curt-tools-disclosure summary .disclosure-arrow {
+            display: inline-block;
+            transition: transform 0.2s ease;
+            font-size: 0.72rem;
+            color: #28a745;
+            font-weight: 900;
+        }
+        details.curt-tools-disclosure[open] summary .disclosure-arrow {
+            transform: rotate(90deg);
+        }
+        .curt-tools-count {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            padding: 0.08rem 0.45rem;
+            border-radius: 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+        .curt-tools-body {
+            margin-top: 0.45rem;
+            padding-top: 0.4rem;
+            border-top: 1px dashed rgba(40, 167, 69, 0.25);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
         }
 
-        .curt-tools-label {
-            font-weight: 700;
+        /* Live status indicators & badges */
+        .curt-status-live {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.74rem;
+            padding: 0.2rem 0.6rem;
+            background: rgba(40, 167, 69, 0.12);
+            border: 1px solid rgba(40, 167, 69, 0.35);
             color: #28a745;
-            font-size: 0.76rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        .curt-status-offline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.74rem;
+            padding: 0.2rem 0.6rem;
+            background: rgba(220, 53, 69, 0.12);
+            border: 1px solid rgba(220, 53, 69, 0.35);
+            color: #dc3545;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        .pulse-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .pulse-indicator.live {
+            background-color: #28a745;
+            box-shadow: 0 0 6px #28a745;
+        }
+        .pulse-indicator.offline {
+            background-color: #dc3545;
+        }
+
+        .backend-status-card {
+            padding: 0.65rem 0.85rem;
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+        }
+        .backend-status-card.live {
+            background: rgba(40, 167, 69, 0.08);
+            border: 1px solid rgba(40, 167, 69, 0.25);
+        }
+        .backend-status-card.offline {
+            background: rgba(220, 53, 69, 0.08);
+            border: 1px solid rgba(220, 53, 69, 0.25);
         }
 
         /* Button styling for suggestions & chips */
@@ -401,6 +487,7 @@ def call_phase2_api(message: str, session_id: str) -> dict:
         return {"error": f"Unexpected request error: {str(error)}"}
 
 
+@st.cache_data(ttl=3)
 def check_backend_health() -> bool:
     """Check if the Phase 2 FastAPI service is responsive."""
     url = f"{get_backend_url()}/health"
@@ -488,9 +575,31 @@ def render_sidebar() -> None:
         else:
             is_healthy = check_backend_health()
             if is_healthy:
-                st.success(f"🟢 **FastAPI Ready** (`{get_backend_url()}`)")
+                st.markdown(
+                    f"""
+                    <div class="backend-status-card live">
+                        <div style="display: flex; align-items: center; gap: 0.45rem;">
+                            <span class="pulse-indicator live"></span>
+                            <span style="font-weight: 700; font-size: 0.83rem; color: #28a745;">FastAPI Backend: READY / LIVE</span>
+                        </div>
+                        <div style="font-size: 0.74rem; opacity: 0.75; margin-top: 0.2rem;"><code>{get_backend_url()}</code> · LLM Agent Active</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
-                st.warning(f"🟠 **FastAPI Unreachable** (`{get_backend_url()}`)")
+                st.markdown(
+                    f"""
+                    <div class="backend-status-card offline">
+                        <div style="display: flex; align-items: center; gap: 0.45rem;">
+                            <span class="pulse-indicator offline"></span>
+                            <span style="font-weight: 700; font-size: 0.83rem; color: #dc3545;">FastAPI Backend: OFFLINE</span>
+                        </div>
+                        <div style="font-size: 0.74rem; opacity: 0.75; margin-top: 0.2rem;">Start backend: <code>uv run uvicorn backend.app.main:app --reload</code></div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
             # ── Session Management ──────────────────────────────────────────
             st.markdown("**🆔 Phase 2 Session Management**")
@@ -768,15 +877,22 @@ def render_chat_history() -> None:
                 if provider:
                     badges_html.append(f'<span class="curt-badge-gray">Model / Engine: <b>{provider}</b></span>')
 
-                # Render tool calls if Phase 2 used tools
+                # Render tool calls if Phase 2 used tools (collapsible disclosure)
                 tools = msg.get("tools_used", [])
                 if tools:
                     tools_tags = " ".join(f'<span class="curt-badge-tool">🛠️ <code>{t}</code></span>' for t in tools)
                     st.markdown(
                         f"""
-                        <div class="curt-tools-box">
-                            <span class="curt-tools-label">⚡ Database Tools Executed:</span> {tools_tags}
-                        </div>
+                        <details class="curt-tools-disclosure">
+                            <summary>
+                                <span class="disclosure-arrow">▶</span>
+                                <span>🛠️ Tools Executed</span>
+                                <span class="curt-tools-count">{len(tools)}</span>
+                            </summary>
+                            <div class="curt-tools-body">
+                                {tools_tags}
+                            </div>
+                        </details>
                         """,
                         unsafe_allow_html=True,
                     )
@@ -815,7 +931,7 @@ def main() -> None:
     init_session_state()
     render_sidebar()
 
-    # Top Navigation Banner with Obvious Mode Switcher
+    # Top Navigation Banner with Obvious Mode Switcher & Live Health Status
     head_col, mode_col = st.columns([3, 2])
     p1_active = st.session_state.selected_mode == PHASE_1_MODE
     with head_col:
@@ -833,8 +949,23 @@ def main() -> None:
             unsafe_allow_html=True,
         )
     with mode_col:
+        is_healthy = check_backend_health()
+        status_text = "READY / LIVE" if is_healthy else "OFFLINE"
+        status_class = "curt-status-live" if is_healthy else "curt-status-offline"
+        pulse_class = "live" if is_healthy else "offline"
+
         st.markdown(
-            "<div style='text-align: right; font-size: 0.73rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7; margin-bottom: 0.2rem;'>Active Assistant Engine</div>",
+            f"""
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                <span style="font-size: 0.73rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7;">
+                    Active Engine
+                </span>
+                <span class="{status_class}">
+                    <span class="pulse-indicator {pulse_class}"></span>
+                    <b>FastAPI {status_text}</b>
+                </span>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
         col_btn1, col_btn2 = st.columns(2)
