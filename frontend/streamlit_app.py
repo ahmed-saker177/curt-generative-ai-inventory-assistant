@@ -8,9 +8,16 @@ Modern, responsive interface supporting:
 
 import json
 import os
+import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 from uuid import uuid4
+
+# Ensure project root is in sys.path
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 import pandas as pd
 import streamlit as st
@@ -33,21 +40,23 @@ STOCK_LOW = "⚠️ Low Stock Only (≤ 5)"
 STOCK_HEALTHY = "✅ In Stock (> 5)"
 
 QUICK_PROMPTS_PHASE1 = [
-    # (icon, title, subtitle, query)
-    ("🛑", "Brake Pads Stock", "Count available units", "How many brake pads do we have?"),
-    ("📍", "ECU Location", "Find storage rack", "Where is the ECU?"),
-    ("🔧", "Browse Brakes", "List category items", "List all items in Brakes."),
-    ("⚠️", "Low Stock Alert", "Items running short", "Which items are low in stock?"),
-    ("📦", "Full Inventory", "See everything", "Show all items in inventory."),
+    # (icon, title, query)
+    ("🛑", "Brake Pads Quantity", "How many brake pads do we have?"),
+    ("📍", "ECU Storage Location", "Where is the ECU?"),
+    ("⚠️", "Low Stock Alert", "Which items are low in stock?"),
+    ("🔧", "Browse Brakes Category", "List all items in Brakes."),
+    ("📦", "Full Inventory Overview", "Show all items in inventory."),
+    ("🏷️", "Available Categories", "What categories do we have?"),
 ]
 
 QUICK_PROMPTS_PHASE2 = [
-    # (icon, title, subtitle, query)
-    ("🛑", "Stock & Location", "Multi-field check via tools", "How many brake pads do we have left, and where are they stored?"),
-    ("⚠️", "Flag Shortage", "ECU low-stock alert", "Check the ECU count and flag a shortage if it's running low."),
-    ("🔧", "Category Details", "Brakes with totals", "List all items in the Brakes category with total count and units."),
-    ("📍", "Workshop Search", "Parts at a location", "What parts are stored in the Mechanical Workshop?"),
-    ("📊", "Telemetry Summary", "High-level overview", "Give me a high-level inventory telemetry summary."),
+    # (icon, title, query)
+    ("🛑", "Stock & Location Lookup", "How many brake pads do we have left, and where are they stored?"),
+    ("⚠️", "Shortage Flagging", "Check the ECU count and flag a shortage if it's running low."),
+    ("🔧", "Detailed Category Breakdown", "List all items in the Brakes category with total count and units."),
+    ("📍", "Workshop Storage Search", "What parts are stored in the Mechanical Workshop?"),
+    ("📊", "Telemetry Overview", "Give me a high-level inventory telemetry summary."),
+    ("🔍", "Fuzzy Existence Check", "Do we have radiator hoses or cooling components in stock?"),
 ]
 
 
@@ -135,23 +144,93 @@ def inject_custom_styles() -> None:
             border-right: 1px solid rgba(125, 125, 125, 0.15);
         }
 
-        /* Chat bubbles refinement */
+        /* Chat bubbles refinement - distinct User vs Assistant */
         div[data-testid="stChatMessage"] {
             border-radius: var(--border-radius);
-            padding: 0.85rem 1rem;
-            margin-bottom: 0.75rem;
-            border: 1px solid rgba(125, 125, 125, 0.12);
+            padding: 0.85rem 1.1rem;
+            margin-bottom: 0.85rem;
+            border: 1px solid rgba(125, 125, 125, 0.14);
+            transition: all 0.2s ease;
         }
 
-        /* Suggested question chips */
-        .stButton>button {
+        /* User bubble distinct styling */
+        div[data-testid="stChatMessage"]:has(.user-header),
+        div[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
+            border: 1px solid rgba(74, 144, 226, 0.25);
+            background: rgba(74, 144, 226, 0.03);
+            border-right: 3px solid rgba(74, 144, 226, 0.7);
+        }
+
+        /* Assistant bubble distinct styling */
+        div[data-testid="stChatMessage"]:has(.assistant-header),
+        div[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) {
+            border: 1px solid rgba(225, 6, 0, 0.18);
+            border-left: 4px solid #E10600 !important;
+            background: linear-gradient(135deg, rgba(225, 6, 0, 0.04) 0%, rgba(20, 20, 25, 0.02) 100%);
+        }
+
+        /* Speaker header inside bubbles */
+        .chat-speaker-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 0.35rem;
+            margin-bottom: 0.55rem;
+            border-bottom: 1px solid rgba(125, 125, 125, 0.12);
+        }
+
+        .chat-speaker-name {
+            font-size: 0.84rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .user-speaker-name {
+            color: #4A90E2;
+        }
+
+        .assistant-speaker-name {
+            color: #E10600;
+        }
+
+        /* Tools executed callout */
+        .curt-tools-box {
+            margin-top: 0.6rem;
+            padding: 0.45rem 0.75rem;
+            background: rgba(40, 167, 69, 0.08);
+            border: 1px solid rgba(40, 167, 69, 0.25);
             border-radius: 8px;
+            font-size: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .curt-tools-label {
+            font-weight: 700;
+            color: #28a745;
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* Button styling for suggestions & chips */
+        .stButton>button {
+            border-radius: 9px;
+            padding: 0.55rem 0.9rem;
+            font-size: 0.86rem;
+            border: 1px solid rgba(125, 125, 125, 0.2);
             transition: all 0.2s ease-in-out;
+            text-align: left !important;
+            justify-content: flex-start !important;
         }
         .stButton>button:hover {
             border-color: #E10600 !important;
             color: #E10600 !important;
+            background: rgba(225, 6, 0, 0.04) !important;
             transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(225, 6, 0, 0.12);
         }
 
         /* Subtitle banner */
@@ -162,41 +241,37 @@ def inject_custom_styles() -> None:
             margin-bottom: 0.6rem;
         }
 
-        /* Quick Prompt Cards */
-        .qp-card {
+        /* Prompt grid header */
+        .prompt-grid-header {
+            font-size: 0.83rem;
+            font-weight: 600;
+            opacity: 0.75;
+            letter-spacing: 0.02em;
+            margin-bottom: 0.6rem;
+        }
+
+        /* Follow-up section */
+        .followup-heading {
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.25rem;
-            padding: 0.9rem 1rem;
-            border-radius: 12px;
-            border: 1px solid rgba(225, 6, 0, 0.18);
-            background: linear-gradient(135deg, rgba(225, 6, 0, 0.05) 0%, rgba(20, 20, 25, 0.02) 100%);
-            cursor: pointer;
-            transition: all 0.22s ease;
-            width: 100%;
-            text-align: left;
-            min-height: 80px;
+            align-items: center;
+            gap: 0.45rem;
+            margin-top: 0.85rem;
+            margin-bottom: 0.5rem;
+            padding-top: 0.55rem;
+            border-top: 1px dashed rgba(125, 125, 125, 0.2);
         }
-        .qp-card:hover {
-            border-color: #E10600;
-            background: linear-gradient(135deg, rgba(225, 6, 0, 0.1) 0%, rgba(20, 20, 25, 0.04) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(225, 6, 0, 0.15);
-        }
-        .qp-icon {
-            font-size: 1.4rem;
-            line-height: 1;
-        }
-        .qp-title {
+
+        .followup-title {
+            font-size: 0.83rem;
             font-weight: 700;
-            font-size: 0.85rem;
-            letter-spacing: 0.01em;
+            letter-spacing: 0.02em;
+            opacity: 0.9;
         }
-        .qp-sub {
+
+        .followup-sub {
             font-size: 0.72rem;
             opacity: 0.6;
-            font-style: italic;
+            margin-left: 0.4rem;
         }
         </style>
         """,
@@ -557,7 +632,11 @@ def submit_prompt(prompt: str) -> None:
             reply_text = f"⚠️ {api_result['error']}"
             provider = None
             tools_used = []
-            follow_ups_p2 = []
+            follow_ups_p2 = [
+                "How many brake pads do we have?",
+                "Which items are low in stock?",
+                "Where is the ECU stored?",
+            ]
         else:
             reply_text = api_result.get("response", "No response received.")
             provider = api_result.get("provider")
@@ -570,6 +649,13 @@ def submit_prompt(prompt: str) -> None:
                 st.session_state.phase2_known_sessions.insert(0, returned_sid)
 
             follow_ups_p2 = generate_phase2_followups(reply_text, prompt)
+            if not follow_ups_p2:
+                # Provide contextual fallback follow-ups so Phase 2 always has helpful suggestions
+                follow_ups_p2 = [
+                    "Check ECU stock and flag if low.",
+                    "What parts are stored in the Mechanical Workshop?",
+                    "Which items are currently low in stock?",
+                ]
 
         active_msgs.append(
             {
@@ -584,7 +670,7 @@ def submit_prompt(prompt: str) -> None:
 
 
 def render_intro() -> None:
-    """Render welcoming quick-start cards before user begins chatting."""
+    """Render welcoming quick-start prompt cards before user begins chatting."""
     if _messages():
         return
 
@@ -618,31 +704,21 @@ def render_intro() -> None:
 
     prompts = QUICK_PROMPTS_PHASE1 if is_phase1 else QUICK_PROMPTS_PHASE2
 
-    # Render section header
-    section_label = "🔧 Rule-Based Queries" if is_phase1 else "🤖 LLM Agent Queries"
     st.markdown(
-        f"<div style='font-size:0.8rem; font-weight:600; opacity:0.7; text-transform:uppercase; "
-        f"letter-spacing:0.06em; margin-bottom:0.5rem;'>{section_label}</div>",
+        "<div class='prompt-grid-header'>💡 <b>Suggested Questions</b> — click any to ask instantly:</div>",
         unsafe_allow_html=True,
     )
 
-    # Render cards in columns — each card is a Streamlit button styled via HTML
-    cols = st.columns(len(prompts))
-    for idx, (icon, title, subtitle, query) in enumerate(prompts):
-        with cols[idx]:
-            card_html = (
-                f"<div class='qp-card'>"
-                f"<div class='qp-icon'>{icon}</div>"
-                f"<div class='qp-title'>{title}</div>"
-                f"<div class='qp-sub'>{subtitle}</div>"
-                f"</div>"
-            )
-            st.markdown(card_html, unsafe_allow_html=True)
+    # Clean 2-column grid of unified, direct-click prompt buttons
+    cols = st.columns(2)
+    for idx, (icon, title, query) in enumerate(prompts):
+        with cols[idx % 2]:
+            label = f"{icon}  {title} — \"{query}\""
             if st.button(
-                "▶",
-                key=f"qp_btn_{idx}",
-                help=query,
+                label,
+                key=f"intro_prompt_{idx}",
                 use_container_width=True,
+                help=f"Ask: {query}",
             ):
                 st.session_state.pending_prompt = query
                 st.rerun()
@@ -656,46 +732,81 @@ def render_chat_history() -> None:
     for idx, msg in enumerate(msgs):
         role = msg["role"]
         with st.chat_message(role, avatar="🏎️" if role == "assistant" else "👤"):
-            st.markdown(msg["content"])
+            if role == "user":
+                st.markdown(
+                    """
+                    <div class="chat-speaker-header user-header">
+                        <span class="chat-speaker-name user-speaker-name">👤 You (Workshop Engineer)</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                st.markdown(msg["content"])
+            else:
+                msg_mode = msg.get("mode", PHASE_1_MODE)
+                is_p1 = msg_mode == PHASE_1_MODE
+                engine_badge = (
+                    '<span class="curt-badge-gray">Rule-Based Heuristic</span>'
+                    if is_p1
+                    else '<span class="curt-badge-red">LLM Agent</span>'
+                )
 
-            if role == "assistant":
+                st.markdown(
+                    f"""
+                    <div class="chat-speaker-header assistant-header">
+                        <span class="chat-speaker-name assistant-speaker-name">🏎️ CURT Assistant</span>
+                        {engine_badge}
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                st.markdown(msg["content"])
+
                 # Render metadata badges
                 badges_html = []
-                msg_mode = msg.get("mode")
-                if msg_mode:
-                    badges_html.append(f'<span class="curt-badge-gray">{msg_mode}</span>')
-
                 provider = msg.get("provider")
                 if provider:
-                    badges_html.append(f'<span class="curt-badge-gray">Provider: <b>{provider}</b></span>')
-
-                if badges_html:
-                    st.markdown(" ".join(badges_html), unsafe_allow_html=True)
+                    badges_html.append(f'<span class="curt-badge-gray">Model / Engine: <b>{provider}</b></span>')
 
                 # Render tool calls if Phase 2 used tools
                 tools = msg.get("tools_used", [])
                 if tools:
-                    tools_tags = " ".join(f'<span class="curt-badge-tool">🛠️ {t}</span>' for t in tools)
-                    st.markdown(f"<div style='margin-top: 0.35rem;'><b>Tools Executed:</b> {tools_tags}</div>", unsafe_allow_html=True)
+                    tools_tags = " ".join(f'<span class="curt-badge-tool">🛠️ <code>{t}</code></span>' for t in tools)
+                    st.markdown(
+                        f"""
+                        <div class="curt-tools-box">
+                            <span class="curt-tools-label">⚡ Database Tools Executed:</span> {tools_tags}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                elif badges_html:
+                    st.markdown(f"<div style='margin-top: 0.4rem;'>{' '.join(badges_html)}</div>", unsafe_allow_html=True)
 
-            # Suggested follow-up chips (Phase 1 and Phase 2)
+            # Suggested follow-up chips (rendered only on the latest assistant message)
             follow_ups = msg.get("follow_ups", [])
-            if idx == latest_index and follow_ups:
-                msg_mode = msg.get("mode", "")
-                chip_label = "💬 **Suggested Follow-Up Questions**" if msg_mode == PHASE_1_MODE else "🤖 **AI-Generated Follow-Up Questions**"
-                with st.container(border=True):
-                    st.caption(chip_label)
-                    chip_cols = st.columns(min(len(follow_ups), 4))
-                    for f_idx, follow_up in enumerate(follow_ups):
-                        col = chip_cols[f_idx % len(chip_cols)]
-                        with col:
-                            if st.button(
-                                follow_up,
-                                key=f"chip_{idx}_{f_idx}",
-                                width="stretch",
-                            ):
-                                st.session_state.pending_prompt = follow_up
-                                st.rerun()
+            if role == "assistant" and idx == latest_index and follow_ups:
+                st.markdown(
+                    """
+                    <div class="followup-heading">
+                        <span style="font-size: 0.95rem;">💡</span>
+                        <span class="followup-title">Suggested Follow-Up Questions</span>
+                        <span class="followup-sub">Click to ask next</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                chip_cols = st.columns(2)
+                for f_idx, follow_up in enumerate(follow_ups):
+                    with chip_cols[f_idx % 2]:
+                        if st.button(
+                            f"💬  {follow_up}",
+                            key=f"chip_{idx}_{f_idx}",
+                            use_container_width=True,
+                            help=f"Ask: {follow_up}",
+                        ):
+                            st.session_state.pending_prompt = follow_up
+                            st.rerun()
 
 
 def main() -> None:
@@ -704,30 +815,52 @@ def main() -> None:
     init_session_state()
     render_sidebar()
 
-    # Top Navigation Banner
-    is_phase1 = st.session_state.selected_mode == PHASE_1_MODE
-    engine_label = "Phase 1: Deterministic Heuristic" if is_phase1 else "Phase 2: LLM + Function Calling"
-    engine_badge = '<span class="curt-badge-gray">Rule-Based</span>' if is_phase1 else '<span class="curt-badge-red">LLM Agent</span>'
-
-    st.markdown(
-        f"""
-        <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid rgba(225, 6, 0, 0.2); padding-bottom: 0.4rem; margin-bottom: 0.9rem;">
-            <div>
-                <h1 style="margin: 0; padding: 0; font-size: 1.8rem; font-weight: 800;">
+    # Top Navigation Banner with Obvious Mode Switcher
+    head_col, mode_col = st.columns([3, 2])
+    p1_active = st.session_state.selected_mode == PHASE_1_MODE
+    with head_col:
+        st.markdown(
+            """
+            <div style="margin-bottom: 0.2rem;">
+                <h1 style="margin: 0; padding: 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em;">
                     🏎️ CURT Inventory Assistant
                 </h1>
-                <div style="font-size: 0.85rem; opacity: 0.75;">
+                <div style="font-size: 0.83rem; opacity: 0.75; margin-top: 0.15rem;">
                     Cairo University Racing Team · Intelligent Workshop Inventory
                 </div>
             </div>
-            <div style="text-align: right;">
-                {engine_badge}
-                <div style="font-size: 0.8rem; font-weight: 600; opacity: 0.85; margin-top: 0.2rem;">{engine_label}</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )
+    with mode_col:
+        st.markdown(
+            "<div style='text-align: right; font-size: 0.73rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7; margin-bottom: 0.2rem;'>Active Assistant Engine</div>",
+            unsafe_allow_html=True,
+        )
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            if st.button(
+                "🔧 Rule-Based" + (" (Active)" if p1_active else ""),
+                key="top_btn_p1",
+                type="primary" if p1_active else "secondary",
+                use_container_width=True,
+            ):
+                if not p1_active:
+                    st.session_state.selected_mode = PHASE_1_MODE
+                    st.rerun()
+        with col_btn2:
+            p2_active = not p1_active
+            if st.button(
+                "🤖 AI Agent" + (" (Active)" if p2_active else ""),
+                key="top_btn_p2",
+                type="primary" if p2_active else "secondary",
+                use_container_width=True,
+            ):
+                if not p2_active:
+                    st.session_state.selected_mode = PHASE_2_MODE
+                    st.rerun()
+
+    st.markdown("<hr style='margin: 0.2rem 0 0.85rem 0; border: none; border-top: 2px solid rgba(225, 6, 0, 0.2);'>", unsafe_allow_html=True)
 
     render_intro()
 
@@ -738,7 +871,7 @@ def main() -> None:
     # Chat Input Box
     placeholder_text = (
         "Ask about inventory (e.g. 'How many brake pads do we have left?', 'Where is the ECU?')..."
-        if is_phase1
+        if p1_active
         else "Ask naturally in Phase 2 (e.g. 'Can you check if we have enough brake pads and where they are?')..."
     )
     user_input = st.chat_input(placeholder_text)
