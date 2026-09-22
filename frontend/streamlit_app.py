@@ -367,7 +367,10 @@ def inject_custom_styles() -> None:
 
 def get_backend_url() -> str:
     """Return backend base URL from environment or default to local FastAPI."""
-    return os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+    raw = os.getenv("BACKEND_URL", "http://localhost:8000").strip().rstrip("/")
+    if not raw.startswith(("http://", "https://")):
+        raw = f"https://{raw}" if "onrender.com" in raw or "railway.app" in raw else f"http://{raw}"
+    return raw
 
 
 def init_session_state() -> None:

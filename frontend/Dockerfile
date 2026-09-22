@@ -16,4 +16,5 @@ COPY phase1 ./phase1
 
 EXPOSE 8501
 
-CMD ["uv", "run", "streamlit", "run", "frontend/streamlit_app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
+CMD uv run streamlit run frontend/streamlit_app.py --server.address 0.0.0.0 --server.port ${PORT:-8501} --server.enableCORS false --server.enableXsrfProtection false
+

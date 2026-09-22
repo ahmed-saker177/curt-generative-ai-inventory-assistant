@@ -1,0 +1,40 @@
+services:
+  # ========================================================
+  # 1. CURT Backend API (FastAPI + Groq LLM Agent)
+  # ========================================================
+  - type: web
+    name: curt-api
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false # Prompts you to enter your Groq API key in the Render dashboard
+      - key: LLM_PROVIDER
+        value: groq
+      - key: CURT_DB_PATH
+        value: ./curt_inventory.db
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+  # ========================================================
+  # 2. CURT Frontend Web (Streamlit Telemetry & Chat UI)
+  # ========================================================
+  - type: web
+    name: curt-frontend
+    runtime: docker
+    dockerfilePath: frontend/Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    envVars:
+      - key: BACKEND_URL
+        # On Render Free Tier, enter your curt-api public URL (e.g. https://curt-api.onrender.com)
+        sync: false
+      - key: STREAMLIT_SERVER_HEADLESS
+        value: "true"
+      - key: PYTHONUNBUFFERED
+        value: "1"
