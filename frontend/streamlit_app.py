@@ -566,41 +566,12 @@ def render_sidebar() -> None:
             st.session_state.selected_mode = selected_mode
             st.rerun()
 
-        # Engine details card
+        # Quick Actions & Session Management
         if st.session_state.selected_mode == PHASE_1_MODE:
-            st.success("🟢 **Phase 1 Active**: Local deterministic rules & exact DB queries. No API keys needed.")
             if st.button("➕ Reset Phase 1 Chat", width="stretch", key="btn_clear_phase1"):
                 start_new_chat()
                 st.rerun()
         else:
-            is_healthy = check_backend_health()
-            if is_healthy:
-                st.markdown(
-                    f"""
-                    <div class="backend-status-card live">
-                        <div style="display: flex; align-items: center; gap: 0.45rem;">
-                            <span class="pulse-indicator live"></span>
-                            <span style="font-weight: 700; font-size: 0.83rem; color: #28a745;">FastAPI Backend: READY / LIVE</span>
-                        </div>
-                        <div style="font-size: 0.74rem; opacity: 0.75; margin-top: 0.2rem;"><code>{get_backend_url()}</code> · LLM Agent Active</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    f"""
-                    <div class="backend-status-card offline">
-                        <div style="display: flex; align-items: center; gap: 0.45rem;">
-                            <span class="pulse-indicator offline"></span>
-                            <span style="font-weight: 700; font-size: 0.83rem; color: #dc3545;">FastAPI Backend: OFFLINE</span>
-                        </div>
-                        <div style="font-size: 0.74rem; opacity: 0.75; margin-top: 0.2rem;">Start backend: <code>uv run uvicorn backend.app.main:app --reload</code></div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
             # ── Session Management ──────────────────────────────────────────
             st.markdown("**🆔 Phase 2 Session Management**")
 
