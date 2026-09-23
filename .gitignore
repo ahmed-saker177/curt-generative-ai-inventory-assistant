@@ -1,19 +1,78 @@
-# Virtual environment
+# ========================================================
+# Environments & Dependencies
+# ========================================================
 .venv/
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
 
-# Python
+# ========================================================
+# Python Bytecode & Caches
+# ========================================================
 __pycache__/
 *.py[cod]
+*$py.class
 
-# Environment/secrets
+# ========================================================
+# Testing, Coverage & Linter Caches
+# ========================================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ========================================================
+# Environment Secrets & Local Data
+# ========================================================
 .env
 .env.*
+.env.local
 !.env.example
-
-# SQLite database
 *.db
 *.sqlite
 *.sqlite3
-
-# Streamlit
+curt_inventory_backup.db
 .streamlit/secrets.toml
+
+# ========================================================
+# IDE & Code Editor Files (Personal workspace configurations)
+# ========================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ========================================================
+# AI Agent & Assistant Local Workspaces
+# ========================================================
+.agents/
+.claude/
+.gemini/
+
+# ========================================================
+# Operating System & Temporary Files
+# ========================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ========================================================
+# Logs & Scratch Files
+# ========================================================
+*.log
+logs/
+scratch/
+tmp/
