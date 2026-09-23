@@ -36,30 +36,29 @@ PHASE_2_MODE = "Phase 2: LLM (Agentic / Tools)"
 
 CATEGORIES_ALL = "All Categories"
 STOCK_ALL = "All Stock Levels"
-STOCK_LOW = "⚠️ Low Stock Only (≤ 5)"
-STOCK_HEALTHY = "✅ In Stock (> 5)"
+STOCK_LOW = "Low Stock Only (≤ 5)"
+STOCK_HEALTHY = "In Stock (> 5)"
 
+# Prompt starters without icons — clean typography-first card layout
 QUICK_PROMPTS_PHASE1 = [
-    # (icon, title, query)
-    ("🛑", "Brake Pads Quantity", "How many brake pads do we have?"),
-    ("📍", "ECU Storage Location", "Where is the ECU?"),
-    ("⚠️", "Low Stock Alert", "Which items are low in stock?"),
-    ("🔧", "Browse Brakes Category", "List all items in Brakes."),
-    ("📦", "Full Inventory Overview", "Show all items in inventory."),
-    ("🏷️", "Available Categories", "What categories do we have?"),
+    # (title, query)
+    ("Brake Pads Quantity", "How many brake pads do we have?"),
+    ("ECU Storage Location", "Where is the ECU?"),
+    ("Low Stock Alert", "Which items are low in stock?"),
+    ("Browse Brakes Category", "List all items in Brakes."),
+    ("Full Inventory Overview", "Show all items in inventory."),
+    ("Available Categories", "What categories do we have?"),
 ]
 
 QUICK_PROMPTS_PHASE2 = [
-    # (icon, title, query)
-    ("🛑", "Stock & Location Lookup", "How many brake pads do we have left, and where are they stored?"),
-    ("⚠️", "Shortage Flagging", "Check the ECU count and flag a shortage if it's running low."),
-    ("🔧", "Detailed Category Breakdown", "List all items in the Brakes category with total count and units."),
-    ("📍", "Workshop Storage Search", "What parts are stored in the Mechanical Workshop?"),
-    ("📊", "Telemetry Overview", "Give me a high-level inventory telemetry summary."),
-    ("🔍", "Fuzzy Existence Check", "Do we have radiator hoses or cooling components in stock?"),
+    # (title, query)
+    ("Stock & Location Lookup", "How many brake pads do we have left, and where are they stored?"),
+    ("Shortage Flagging", "Check the ECU count and flag a shortage if it's running low."),
+    ("Detailed Category Breakdown", "List all items in the Brakes category with total count and units."),
+    ("Workshop Storage Search", "What parts are stored in the Mechanical Workshop?"),
+    ("Telemetry Overview", "Give me a high-level inventory telemetry summary."),
+    ("Fuzzy Existence Check", "Do we have radiator hoses or cooling components in stock?"),
 ]
-
-
 
 # Page configuration
 st.set_page_config(
@@ -82,7 +81,7 @@ def inject_custom_styles() -> None:
         :root {
             --curt-red: #E10600;
             --curt-red-dark: #B30000;
-            --curt-bg-subtle: rgba(225, 6, 0, 0.04);
+            --curt-red-subtle: rgba(225, 6, 0, 0.05);
             --border-radius: 12px;
         }
 
@@ -92,10 +91,10 @@ def inject_custom_styles() -> None:
             align-items: center;
             justify-content: space-between;
             padding: 1rem 1.4rem;
-            background: linear-gradient(135deg, rgba(225, 6, 0, 0.08) 0%, rgba(20, 20, 25, 0.03) 100%);
+            background: linear-gradient(135deg, rgba(225, 6, 0, 0.07) 0%, rgba(125, 125, 125, 0.03) 100%);
             border: 1px solid rgba(225, 6, 0, 0.18);
             border-radius: var(--border-radius);
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.15rem;
         }
 
         .curt-badge-red {
@@ -103,8 +102,8 @@ def inject_custom_styles() -> None:
             background: #E10600;
             color: #FFFFFF !important;
             font-weight: 700;
-            font-size: 0.75rem;
-            padding: 0.2rem 0.65rem;
+            font-size: 0.74rem;
+            padding: 0.22rem 0.65rem;
             border-radius: 6px;
             letter-spacing: 0.05em;
             text-transform: uppercase;
@@ -112,17 +111,18 @@ def inject_custom_styles() -> None:
 
         .curt-badge-gray {
             display: inline-block;
-            background: rgba(125, 125, 135, 0.18);
+            background: rgba(125, 125, 135, 0.16);
             color: inherit;
             font-weight: 600;
-            font-size: 0.75rem;
-            padding: 0.2rem 0.6rem;
+            font-size: 0.74rem;
+            padding: 0.22rem 0.6rem;
             border-radius: 6px;
+            letter-spacing: 0.03em;
         }
 
         .curt-badge-tool {
             display: inline-block;
-            background: rgba(40, 167, 69, 0.15);
+            background: rgba(40, 167, 69, 0.12);
             color: #28a745;
             font-weight: 600;
             font-size: 0.75rem;
@@ -133,69 +133,65 @@ def inject_custom_styles() -> None:
             margin-top: 0.25rem;
         }
 
-        /* Metric cards */
-        [data-testid="stMetricValue"] {
-            font-weight: 800 !important;
-            letter-spacing: -0.02em;
-        }
-
         /* Sidebar enhancement */
         section[data-testid="stSidebar"] {
             border-right: 1px solid rgba(125, 125, 125, 0.15);
         }
 
-        /* Chat bubbles refinement - distinct User vs Assistant */
+        .sidebar-brand-card {
+            text-align: center;
+            padding: 0.6rem 0.5rem 0.8rem;
+            margin-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(125, 125, 125, 0.14);
+        }
+
+        .sidebar-mode-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 0.8rem;
+            background: rgba(125, 125, 125, 0.05);
+            border: 1px solid rgba(125, 125, 125, 0.15);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.82rem;
+        }
+
+        /* Chat bubbles refinement - clean distinct borders without duplicate headers */
         div[data-testid="stChatMessage"] {
             border-radius: var(--border-radius);
-            padding: 0.85rem 1.1rem;
+            padding: 0.85rem 1.15rem;
             margin-bottom: 0.85rem;
-            border: 1px solid rgba(125, 125, 125, 0.14);
+            border: 1px solid rgba(125, 125, 125, 0.15);
             transition: all 0.2s ease;
         }
 
         /* User bubble distinct styling */
-        div[data-testid="stChatMessage"]:has(.user-header),
         div[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
-            border: 1px solid rgba(74, 144, 226, 0.25);
+            border: 1px solid rgba(74, 144, 226, 0.28);
             background: rgba(74, 144, 226, 0.03);
             border-right: 3px solid rgba(74, 144, 226, 0.7);
         }
 
         /* Assistant bubble distinct styling */
-        div[data-testid="stChatMessage"]:has(.assistant-header),
         div[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) {
-            border: 1px solid rgba(225, 6, 0, 0.18);
+            border: 1px solid rgba(225, 6, 0, 0.2);
             border-left: 4px solid #E10600 !important;
-            background: linear-gradient(135deg, rgba(225, 6, 0, 0.04) 0%, rgba(20, 20, 25, 0.02) 100%);
+            background: linear-gradient(135deg, rgba(225, 6, 0, 0.04) 0%, rgba(125, 125, 125, 0.02) 100%);
         }
 
-        /* Speaker header inside bubbles */
-        .chat-speaker-header {
+        .assistant-meta-bar {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            margin-bottom: 0.5rem;
             padding-bottom: 0.35rem;
-            margin-bottom: 0.55rem;
-            border-bottom: 1px solid rgba(125, 125, 125, 0.12);
+            border-bottom: 1px solid rgba(125, 125, 125, 0.1);
         }
 
-        .chat-speaker-name {
-            font-size: 0.84rem;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-        }
-
-        .user-speaker-name {
-            color: #4A90E2;
-        }
-
-        .assistant-speaker-name {
-            color: #E10600;
-        }
-
-        /* Tools executed collapsible disclosure (>) */
+        /* Tools executed collapsible disclosure */
         details.curt-tools-disclosure {
-            margin-top: 0.55rem;
+            margin-top: 0.65rem;
             border: 1px solid rgba(40, 167, 69, 0.28);
             background: rgba(40, 167, 69, 0.04);
             border-radius: 8px;
@@ -207,7 +203,7 @@ def inject_custom_styles() -> None:
         }
         details.curt-tools-disclosure summary {
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 600;
             color: #28a745;
             user-select: none;
@@ -222,7 +218,7 @@ def inject_custom_styles() -> None:
         details.curt-tools-disclosure summary .disclosure-arrow {
             display: inline-block;
             transition: transform 0.2s ease;
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             color: #28a745;
             font-weight: 900;
         }
@@ -232,9 +228,9 @@ def inject_custom_styles() -> None:
         .curt-tools-count {
             background: rgba(40, 167, 69, 0.2);
             color: #28a745;
-            padding: 0.08rem 0.45rem;
+            padding: 0.05rem 0.45rem;
             border-radius: 10px;
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 700;
         }
         .curt-tools-body {
@@ -252,7 +248,7 @@ def inject_custom_styles() -> None:
             align-items: center;
             gap: 0.35rem;
             font-size: 0.74rem;
-            padding: 0.2rem 0.6rem;
+            padding: 0.22rem 0.65rem;
             background: rgba(40, 167, 69, 0.12);
             border: 1px solid rgba(40, 167, 69, 0.35);
             color: #28a745;
@@ -265,7 +261,7 @@ def inject_custom_styles() -> None:
             align-items: center;
             gap: 0.35rem;
             font-size: 0.74rem;
-            padding: 0.2rem 0.6rem;
+            padding: 0.22rem 0.65rem;
             background: rgba(220, 53, 69, 0.12);
             border: 1px solid rgba(220, 53, 69, 0.35);
             color: #dc3545;
@@ -287,77 +283,137 @@ def inject_custom_styles() -> None:
             background-color: #dc3545;
         }
 
-        .backend-status-card {
-            padding: 0.65rem 0.85rem;
-            border-radius: 10px;
-            margin-bottom: 0.75rem;
+        /* Card-Style Prompt Starter Buttons: No icons, 2-line layout, auto-wrapping */
+        .prompt-grid-container {
+            margin-bottom: 1.25rem;
         }
-        .backend-status-card.live {
-            background: rgba(40, 167, 69, 0.08);
-            border: 1px solid rgba(40, 167, 69, 0.25);
+        .prompt-grid-container .stButton > button {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            justify-content: center !important;
+            text-align: left !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+            height: auto !important;
+            min-height: 4.8rem !important;
+            padding: 0.75rem 1rem !important;
+            border-radius: 10px !important;
+            border: 1px solid rgba(125, 125, 125, 0.22) !important;
+            background: rgba(125, 125, 125, 0.03) !important;
+            transition: all 0.2s ease-in-out !important;
         }
-        .backend-status-card.offline {
-            background: rgba(220, 53, 69, 0.08);
-            border: 1px solid rgba(220, 53, 69, 0.25);
+        .prompt-grid-container .stButton > button:hover {
+            border-color: #E10600 !important;
+            background: rgba(225, 6, 0, 0.04) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 14px rgba(225, 6, 0, 0.12) !important;
+        }
+        .prompt-grid-container .stButton > button p {
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1.35 !important;
+        }
+        .prompt-grid-container .stButton > button p strong {
+            font-size: 0.9rem !important;
+            font-weight: 700 !important;
+            color: inherit !important;
+            display: block !important;
+            margin-bottom: 0.2rem !important;
+        }
+        .prompt-grid-container .stButton > button p em {
+            font-size: 0.8rem !important;
+            opacity: 0.72 !important;
+            font-style: normal !important;
+            display: block !important;
         }
 
-        /* Button styling for suggestions & chips */
-        .stButton>button {
-            border-radius: 9px;
-            padding: 0.55rem 0.9rem;
-            font-size: 0.86rem;
-            border: 1px solid rgba(125, 125, 125, 0.2);
-            transition: all 0.2s ease-in-out;
-            text-align: left !important;
-            justify-content: flex-start !important;
+        /* Telemetry Cards */
+        .curt-telemetry-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.25rem;
         }
-        .stButton>button:hover {
+        .telemetry-card {
+            background: linear-gradient(135deg, rgba(125, 125, 125, 0.05) 0%, rgba(125, 125, 125, 0.02) 100%);
+            border: 1px solid rgba(125, 125, 125, 0.18);
+            border-radius: 10px;
+            padding: 0.9rem 1.1rem;
+            transition: all 0.2s ease;
+        }
+        .telemetry-card:hover {
+            border-color: rgba(225, 6, 0, 0.35);
+            box-shadow: 0 4px 12px rgba(225, 6, 0, 0.08);
+        }
+        .telemetry-card.alert {
+            border-color: rgba(225, 6, 0, 0.38);
+            background: linear-gradient(135deg, rgba(225, 6, 0, 0.06) 0%, rgba(125, 125, 125, 0.02) 100%);
+        }
+        .telemetry-card-title {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            opacity: 0.75;
+            margin-bottom: 0.25rem;
+        }
+        .telemetry-card-val {
+            font-size: 1.85rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+        .telemetry-card-sub {
+            font-size: 0.74rem;
+            opacity: 0.65;
+            margin-top: 0.3rem;
+        }
+
+        /* Follow-up chips styling */
+        .followup-container {
+            margin-top: 0.85rem;
+            padding-top: 0.65rem;
+            border-top: 1px dashed rgba(125, 125, 125, 0.2);
+        }
+        .followup-heading {
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin-bottom: 0.5rem;
+            opacity: 0.85;
+        }
+        .followup-container .stButton > button {
+            text-align: left !important;
+            font-size: 0.84rem !important;
+            padding: 0.45rem 0.8rem !important;
+            border-radius: 8px !important;
+            border: 1px solid rgba(125, 125, 125, 0.2) !important;
+            transition: all 0.2s ease !important;
+        }
+        .followup-container .stButton > button:hover {
             border-color: #E10600 !important;
             color: #E10600 !important;
             background: rgba(225, 6, 0, 0.04) !important;
-            transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(225, 6, 0, 0.12);
         }
 
-        /* Subtitle banner */
-        .curt-subtitle {
-            font-size: 0.92rem;
-            opacity: 0.8;
-            margin-top: -0.3rem;
-            margin-bottom: 0.6rem;
+        /* Styled Top Tabs */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 1.25rem;
+            border-bottom: 2px solid rgba(125, 125, 125, 0.15);
+            padding-bottom: 0.2rem;
+            margin-bottom: 1.15rem;
         }
-
-        /* Prompt grid header */
-        .prompt-grid-header {
-            font-size: 0.83rem;
-            font-weight: 600;
-            opacity: 0.75;
-            letter-spacing: 0.02em;
-            margin-bottom: 0.6rem;
-        }
-
-        /* Follow-up section */
-        .followup-heading {
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-            margin-top: 0.85rem;
-            margin-bottom: 0.5rem;
-            padding-top: 0.55rem;
-            border-top: 1px dashed rgba(125, 125, 125, 0.2);
-        }
-
-        .followup-title {
-            font-size: 0.83rem;
+        .stTabs [data-baseweb="tab"] {
+            font-size: 0.96rem;
             font-weight: 700;
-            letter-spacing: 0.02em;
-            opacity: 0.9;
+            padding: 0.55rem 0.9rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
         }
-
-        .followup-sub {
-            font-size: 0.72rem;
-            opacity: 0.6;
-            margin-left: 0.4rem;
+        .stTabs [aria-selected="true"] {
+            color: #E10600 !important;
+            border-bottom: 3px solid #E10600 !important;
         }
         </style>
         """,
@@ -375,14 +431,11 @@ def get_backend_url() -> str:
 
 def init_session_state() -> None:
     """Initialize state variables for the current Streamlit session."""
-    # Dedicated message store for Phase 1 (deterministic rule-based)
     st.session_state.setdefault("phase1_messages", [])
-
-    # Dedicated per-session message store for Phase 2 (LLM agent): {session_id: [msg, ...]}
     st.session_state.setdefault("phase2_sessions", {})
     initial_p2_sid = str(uuid4())
     st.session_state.setdefault("phase2_session_id", initial_p2_sid)
-    st.session_state.setdefault("session_id", initial_p2_sid)  # alias for backwards compatibility
+    st.session_state.setdefault("session_id", initial_p2_sid)
     st.session_state.setdefault("phase2_known_sessions", [initial_p2_sid])
     st.session_state.phase2_sessions.setdefault(initial_p2_sid, [])
 
@@ -446,7 +499,6 @@ def generate_phase2_followups(last_response: str, user_question: str) -> list[st
         return []
     try:
         raw = result.get("response", "[]")
-        # Extract JSON array from the response
         start = raw.find("[")
         end = raw.rfind("]") + 1
         if start == -1 or end == 0:
@@ -533,17 +585,32 @@ def filter_inventory(
     return dataframe
 
 
+def _get_friendly_session_label(sid: str, is_active: bool) -> str:
+    """Format session into an informative label rather than a raw UUID hash."""
+    prefix = "▶ " if is_active else ""
+    msgs = st.session_state.phase2_sessions.get(sid, [])
+    user_first = None
+    for m in msgs:
+        if m.get("role") == "user":
+            user_first = m.get("content", "").strip()
+            break
+    if user_first:
+        snippet = (user_first[:24] + "...") if len(user_first) > 24 else user_first
+        return f"{prefix}{snippet}"
+    return f"{prefix}Session ({sid[:8]})"
+
+
 def render_sidebar() -> None:
-    """Render the sidebar with phase toggle, metrics, and live searchable table."""
+    """Render the sidebar with brand identity, active mode info, and session control."""
     with st.sidebar:
         # CURT Logo / Brand banner
         st.markdown(
             """
-            <div style="text-align: center; margin-bottom: 0.8rem;">
-                <span class="curt-badge-red" style="font-size: 0.9rem; padding: 0.3rem 0.9rem;">
-                    🏎️ CURT RACING
+            <div class="sidebar-brand-card">
+                <span class="curt-badge-red" style="font-size: 0.85rem; padding: 0.28rem 0.8rem;">
+                    CURT RACING
                 </span>
-                <div style="font-weight: 700; font-size: 1.05rem; margin-top: 0.4rem;">
+                <div style="font-weight: 700; font-size: 1.05rem; margin-top: 0.45rem;">
                     Formula Student Inventory
                 </div>
                 <div style="font-size: 0.78rem; opacity: 0.7;">Season 26-27 Technical Task</div>
@@ -552,139 +619,70 @@ def render_sidebar() -> None:
             unsafe_allow_html=True,
         )
 
-        st.header("⚙️ Assistant Mode", divider=True)
-
-        mode_options = [PHASE_1_MODE, PHASE_2_MODE]
-        current_index = 0 if st.session_state.selected_mode == PHASE_1_MODE else 1
-
-        selected_mode = st.radio(
-            "Select Assistant Engine",
-            mode_options,
-            index=current_index,
-            help="Switch between Phase 1 (deterministic rule-based) and Phase 2 (LLM function calling).",
-            label_visibility="collapsed",
+        # Active Engine Badge (Informational - unified toggle is in top header)
+        is_p2 = st.session_state.selected_mode == PHASE_2_MODE
+        mode_badge_class = "curt-badge-red" if is_p2 else "curt-badge-gray"
+        mode_label = "Phase 2: LLM Agent" if is_p2 else "Phase 1: Rule-Based"
+        st.markdown(
+            f"""
+            <div class="sidebar-mode-indicator">
+                <span style="opacity: 0.75; font-weight: 600;">Engine</span>
+                <span class="{mode_badge_class}">{mode_label}</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
-        if selected_mode != st.session_state.selected_mode:
-            st.session_state.selected_mode = selected_mode
-            st.rerun()
-
         # Quick Actions & Session Management
+        st.subheader("Session Control", divider="gray")
         if st.session_state.selected_mode == PHASE_1_MODE:
-            if st.button("➕ Reset Phase 1 Chat", width="stretch", key="btn_clear_phase1"):
+            st.caption("Phase 1 operates deterministically per question.")
+            if st.button("Reset Conversation", use_container_width=True, key="btn_clear_phase1"):
                 start_new_chat()
                 st.rerun()
         else:
-            # ── Session Management ──────────────────────────────────────────
-            st.markdown("**🆔 Phase 2 Session Management**")
-
             active_sid = st.session_state.phase2_session_id
-            st.caption(f"Active Session: `{active_sid[:20]}...`")
-
             known = st.session_state.get("phase2_known_sessions", [active_sid])
-            session_labels = [
-                ("▶ " if sid == active_sid else "") + sid[:24] + "..." for sid in known
-            ]
+
+            session_labels = [_get_friendly_session_label(sid, sid == active_sid) for sid in known]
             chosen_label = st.selectbox(
-                "Switch session",
+                "History & Sessions",
                 session_labels,
                 index=0,
                 key="session_history_select",
-                help="Select a session to switch back to it and see its chat history.",
+                help="Select a previous conversation to inspect its history.",
             )
             chosen_full = known[session_labels.index(chosen_label)]
             if chosen_full != active_sid:
-                if st.button("🔄 Switch to this session", width="stretch", key="btn_restore_session"):
+                if st.button("Switch to Selected Session", use_container_width=True, key="btn_restore_session"):
                     switch_session(chosen_full)
                     st.rerun()
 
-            if st.button("➕ New Chat Session", width="stretch", key="btn_new_chat_sidebar"):
+            if st.button("New Chat Session", use_container_width=True, key="btn_new_chat_sidebar"):
                 start_new_chat()
                 st.rerun()
 
-        st.header("📦 Inventory Telemetry", divider=True)
-
+        # Telemetry Snapshot
         parts = get_all_parts()
-        if not parts:
-            st.info("Inventory table is empty.")
-            return
+        if parts:
+            total_parts = len(parts)
+            total_units = sum(int(p["quantity"]) for p in parts)
+            low_stock_parts = sum(1 for p in parts if int(p["quantity"]) <= DEFAULT_LOW_STOCK_THRESHOLD)
 
-        inventory_df = pd.DataFrame(parts)
-        total_parts = len(inventory_df)
-        total_units = int(inventory_df["quantity"].sum())
-        low_stock_parts = int(
-            (inventory_df["quantity"] <= DEFAULT_LOW_STOCK_THRESHOLD).sum()
-        )
+            st.subheader("Telemetry Snapshot", divider="gray")
+            m1, m2 = st.columns(2)
+            m1.metric("Part Types", total_parts)
+            m2.metric("Total Units", total_units)
 
-        m_col1, m_col2, m_col3 = st.columns(3)
-        m_col1.metric("Items", total_parts)
-        m_col2.metric("Units", total_units)
-        m_col3.metric("Low Stock", low_stock_parts)
-
-        # Filters accordion
-        with st.expander("🔍 Filter & Search Inventory", expanded=False):
-            search_term = st.text_input(
-                "Search parts/locations",
-                value=st.session_state.filter_search,
-                placeholder="e.g. Brake, Lab, Engine...",
+            low_stock_delta = f"-{low_stock_parts}" if low_stock_parts > 0 else "Optimal"
+            st.metric(
+                "Low Stock Items (≤5)",
+                low_stock_parts,
+                delta=low_stock_delta,
+                delta_color="inverse",
             )
-            st.session_state.filter_search = search_term
 
-            categories = [CATEGORIES_ALL] + sorted(list({p["category"] for p in parts}))
-            selected_cat = st.selectbox(
-                "Category",
-                categories,
-                index=categories.index(st.session_state.filter_category)
-                if st.session_state.filter_category in categories
-                else 0,
-            )
-            st.session_state.filter_category = selected_cat
-
-            stock_options = [STOCK_ALL, STOCK_LOW, STOCK_HEALTHY]
-            selected_stock = st.selectbox(
-                "Stock Status",
-                stock_options,
-                index=stock_options.index(st.session_state.filter_stock)
-                if st.session_state.filter_stock in stock_options
-                else 0,
-            )
-            st.session_state.filter_stock = selected_stock
-
-        filtered_inventory = filter_inventory(
-            parts,
-            st.session_state.filter_search,
-            st.session_state.filter_category,
-            st.session_state.filter_stock,
-        )
-
-        st.caption(f"Showing **{len(filtered_inventory)}** of {total_parts} part types")
-        st.dataframe(
-            filtered_inventory[["name", "quantity", "category", "location"]],
-            hide_index=True,
-            column_config={
-                "name": st.column_config.TextColumn("Part Name", width="medium"),
-                "quantity": st.column_config.NumberColumn("Qty", width="small"),
-                "category": st.column_config.TextColumn("Category", width="small"),
-                "location": st.column_config.TextColumn("Storage Location", width="large"),
-            },
-            height=280,
-        )
-
-        # Export & Reset actions
-        action_col1, action_col2 = st.columns(2)
-        with action_col1:
-            csv_data = filtered_inventory.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                "📥 CSV Export",
-                csv_data,
-                "curt_inventory.csv",
-                "text/csv",
-                width="stretch",
-            )
-        with action_col2:
-            if st.button("➕ New Chat", width="stretch"):
-                start_new_chat()
-                st.rerun()
+        st.caption("Cairo University Racing Team · Gen-AI Workshop")
 
 
 def submit_prompt(prompt: str) -> None:
@@ -708,11 +706,11 @@ def submit_prompt(prompt: str) -> None:
             }
         )
     else:
-        with st.spinner("🏎️ CURT AI Assistant querying tools & database..."):
+        with st.spinner("CURT AI Assistant querying tools & database..."):
             api_result = call_phase2_api(prompt, st.session_state.phase2_session_id)
 
         if "error" in api_result:
-            reply_text = f"⚠️ {api_result['error']}"
+            reply_text = f"{api_result['error']}"
             provider = None
             tools_used = []
             follow_ups_p2 = [
@@ -733,7 +731,6 @@ def submit_prompt(prompt: str) -> None:
 
             follow_ups_p2 = generate_phase2_followups(reply_text, prompt)
             if not follow_ups_p2:
-                # Provide contextual fallback follow-ups so Phase 2 always has helpful suggestions
                 follow_ups_p2 = [
                     "Check ECU stock and flag if low.",
                     "What parts are stored in the Mechanical Workshop?",
@@ -753,7 +750,7 @@ def submit_prompt(prompt: str) -> None:
 
 
 def render_intro() -> None:
-    """Render welcoming quick-start prompt cards before user begins chatting."""
+    """Render clean, card-style prompt starters with no icons and auto-wrapping text."""
     if _messages():
         return
 
@@ -774,8 +771,8 @@ def render_intro() -> None:
         f"""
         <div class="curt-header-container">
             <div>
-                <h3 style="margin: 0; padding: 0;">{intro_title}</h3>
-                <div class="curt-subtitle">{intro_sub}</div>
+                <h3 style="margin: 0; padding: 0; font-size: 1.15rem; font-weight: 700;">{intro_title}</h3>
+                <div style="font-size: 0.85rem; opacity: 0.75; margin-top: 0.2rem;">{intro_sub}</div>
             </div>
             <div>
                 <span class="curt-badge-red">{badge_label}</span>
@@ -788,15 +785,17 @@ def render_intro() -> None:
     prompts = QUICK_PROMPTS_PHASE1 if is_phase1 else QUICK_PROMPTS_PHASE2
 
     st.markdown(
-        "<div class='prompt-grid-header'>💡 <b>Suggested Questions</b> — click any to ask instantly:</div>",
+        "<div style='font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.75; margin-bottom: 0.65rem;'>Suggested Inquiries — Click any card to ask instantly:</div>",
         unsafe_allow_html=True,
     )
 
-    # Clean 2-column grid of unified, direct-click prompt buttons
+    # 2-column grid of compact, multi-line prompt cards without icons
+    st.markdown('<div class="prompt-grid-container">', unsafe_allow_html=True)
     cols = st.columns(2)
-    for idx, (icon, title, query) in enumerate(prompts):
+    for idx, (title, query) in enumerate(prompts):
         with cols[idx % 2]:
-            label = f"{icon}  {title} — \"{query}\""
+            # Styled with markdown: Bold Title on line 1, Query on line 2 in muted italics
+            label = f"**{title}**\n\n_{query}_"
             if st.button(
                 label,
                 key=f"intro_prompt_{idx}",
@@ -805,10 +804,11 @@ def render_intro() -> None:
             ):
                 st.session_state.pending_prompt = query
                 st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_chat_history() -> None:
-    """Render dialogue messages, engine tags, tool invocations, and suggested replies."""
+    """Render dialogue messages without duplicate headers, with clean tool disclosures."""
     msgs = _messages()
     latest_index = len(msgs) - 1
 
@@ -816,51 +816,39 @@ def render_chat_history() -> None:
         role = msg["role"]
         with st.chat_message(role, avatar="🏎️" if role == "assistant" else "👤"):
             if role == "user":
-                st.markdown(
-                    """
-                    <div class="chat-speaker-header user-header">
-                        <span class="chat-speaker-name user-speaker-name">👤 You (Workshop Engineer)</span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
                 st.markdown(msg["content"])
             else:
                 msg_mode = msg.get("mode", PHASE_1_MODE)
                 is_p1 = msg_mode == PHASE_1_MODE
                 engine_badge = (
-                    '<span class="curt-badge-gray">Rule-Based Heuristic</span>'
+                    '<span class="curt-badge-gray">Phase 1 · Rule-Based</span>'
                     if is_p1
-                    else '<span class="curt-badge-red">LLM Agent</span>'
+                    else '<span class="curt-badge-red">Phase 2 · LLM Agent</span>'
                 )
+                provider = msg.get("provider")
+                provider_tag = f'<span class="curt-badge-gray" style="font-size: 0.72rem;">Model: <b>{provider}</b></span>' if provider else ""
 
                 st.markdown(
                     f"""
-                    <div class="chat-speaker-header assistant-header">
-                        <span class="chat-speaker-name assistant-speaker-name">🏎️ CURT Assistant</span>
+                    <div class="assistant-meta-bar">
                         {engine_badge}
+                        {provider_tag}
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
                 st.markdown(msg["content"])
 
-                # Render metadata badges
-                badges_html = []
-                provider = msg.get("provider")
-                if provider:
-                    badges_html.append(f'<span class="curt-badge-gray">Model / Engine: <b>{provider}</b></span>')
-
-                # Render tool calls if Phase 2 used tools (collapsible disclosure)
+                # Render tool calls if Phase 2 executed tools (collapsible disclosure)
                 tools = msg.get("tools_used", [])
                 if tools:
-                    tools_tags = " ".join(f'<span class="curt-badge-tool">🛠️ <code>{t}</code></span>' for t in tools)
+                    tools_tags = " ".join(f'<span class="curt-badge-tool"><code>{t}</code></span>' for t in tools)
                     st.markdown(
                         f"""
                         <details class="curt-tools-disclosure">
                             <summary>
                                 <span class="disclosure-arrow">▶</span>
-                                <span>🛠️ Tools Executed</span>
+                                <span>Tools Executed</span>
                                 <span class="curt-tools-count">{len(tools)}</span>
                             </summary>
                             <div class="curt-tools-body">
@@ -870,33 +858,146 @@ def render_chat_history() -> None:
                         """,
                         unsafe_allow_html=True,
                     )
-                elif badges_html:
-                    st.markdown(f"<div style='margin-top: 0.4rem;'>{' '.join(badges_html)}</div>", unsafe_allow_html=True)
 
-            # Suggested follow-up chips (rendered only on the latest assistant message)
+            # Follow-up questions (rendered only on the latest assistant response)
             follow_ups = msg.get("follow_ups", [])
             if role == "assistant" and idx == latest_index and follow_ups:
                 st.markdown(
                     """
-                    <div class="followup-heading">
-                        <span style="font-size: 0.95rem;">💡</span>
-                        <span class="followup-title">Suggested Follow-Up Questions</span>
-                        <span class="followup-sub">Click to ask next</span>
+                    <div class="followup-container">
+                        <div class="followup-heading">Suggested Follow-Up Inquiries</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
-                chip_cols = st.columns(2)
+                chip_cols = st.columns(len(follow_ups))
                 for f_idx, follow_up in enumerate(follow_ups):
-                    with chip_cols[f_idx % 2]:
+                    with chip_cols[f_idx]:
                         if st.button(
-                            f"💬  {follow_up}",
+                            follow_up,
                             key=f"chip_{idx}_{f_idx}",
                             use_container_width=True,
                             help=f"Ask: {follow_up}",
                         ):
                             st.session_state.pending_prompt = follow_up
                             st.rerun()
+
+
+def render_inventory_tab() -> None:
+    """Render full-width inventory telemetry, search filters, and live table."""
+    parts = get_all_parts()
+    if not parts:
+        st.info("Inventory table is empty.")
+        return
+
+    inventory_df = pd.DataFrame(parts)
+    total_parts = len(inventory_df)
+    total_units = int(inventory_df["quantity"].sum())
+    low_stock_parts = int((inventory_df["quantity"] <= DEFAULT_LOW_STOCK_THRESHOLD).sum())
+    healthy_parts = total_parts - low_stock_parts
+
+    # High-impact telemetry metrics cards
+    st.markdown(
+        f"""
+        <div class="curt-telemetry-row">
+            <div class="telemetry-card">
+                <div class="telemetry-card-title">Part Types</div>
+                <div class="telemetry-card-val">{total_parts}</div>
+                <div class="telemetry-card-sub">Cataloged SKU classifications</div>
+            </div>
+            <div class="telemetry-card">
+                <div class="telemetry-card-title">Total Units In Stock</div>
+                <div class="telemetry-card-val">{total_units}</div>
+                <div class="telemetry-card-sub">Aggregated inventory count</div>
+            </div>
+            <div class="telemetry-card {'alert' if low_stock_parts > 0 else ''}">
+                <div class="telemetry-card-title" style="color: {'#dc3545' if low_stock_parts > 0 else 'inherit'};">
+                    Low Stock Alerts (≤ {DEFAULT_LOW_STOCK_THRESHOLD})
+                </div>
+                <div class="telemetry-card-val" style="color: {'#dc3545' if low_stock_parts > 0 else 'inherit'};">
+                    {low_stock_parts}
+                </div>
+                <div class="telemetry-card-sub">Components requiring reorder</div>
+            </div>
+            <div class="telemetry-card">
+                <div class="telemetry-card-title">Healthy Inventory</div>
+                <div class="telemetry-card-val" style="color: #28a745;">{healthy_parts}</div>
+                <div class="telemetry-card-sub">Components with surplus stock</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # 3-column filter toolbar
+    f_col1, f_col2, f_col3 = st.columns([2, 1, 1])
+    with f_col1:
+        search_term = st.text_input(
+            "Search parts, categories, or storage locations",
+            value=st.session_state.filter_search,
+            placeholder="e.g. Brake Pads, Workshop, Electronics, ECU...",
+            label_visibility="collapsed",
+        )
+        st.session_state.filter_search = search_term
+
+    with f_col2:
+        categories = [CATEGORIES_ALL] + sorted(list({p["category"] for p in parts}))
+        selected_cat = st.selectbox(
+            "Filter Category",
+            categories,
+            index=categories.index(st.session_state.filter_category)
+            if st.session_state.filter_category in categories
+            else 0,
+            label_visibility="collapsed",
+        )
+        st.session_state.filter_category = selected_cat
+
+    with f_col3:
+        stock_options = [STOCK_ALL, STOCK_LOW, STOCK_HEALTHY]
+        selected_stock = st.selectbox(
+            "Filter Stock Level",
+            stock_options,
+            index=stock_options.index(st.session_state.filter_stock)
+            if st.session_state.filter_stock in stock_options
+            else 0,
+            label_visibility="collapsed",
+        )
+        st.session_state.filter_stock = selected_stock
+
+    filtered_df = filter_inventory(
+        parts,
+        st.session_state.filter_search,
+        st.session_state.filter_category,
+        st.session_state.filter_stock,
+    )
+
+    # Action bar and caption
+    act_col1, act_col2 = st.columns([3, 1])
+    with act_col1:
+        st.caption(f"Displaying **{len(filtered_df)}** of **{total_parts}** cataloged items")
+    with act_col2:
+        csv_data = filtered_df.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "Export CSV",
+            csv_data,
+            "curt_inventory.csv",
+            "text/csv",
+            use_container_width=True,
+        )
+
+    # Full-width interactive dataframe
+    st.dataframe(
+        filtered_df[["name", "quantity", "category", "location"]],
+        hide_index=True,
+        column_config={
+            "name": st.column_config.TextColumn("Part Name", width="medium"),
+            "quantity": st.column_config.NumberColumn("Quantity (Units)", width="small"),
+            "category": st.column_config.TextColumn("Category", width="medium"),
+            "location": st.column_config.TextColumn("Storage Location", width="large"),
+        },
+        use_container_width=True,
+        height=380,
+    )
 
 
 def main() -> None:
@@ -911,11 +1012,11 @@ def main() -> None:
     with head_col:
         st.markdown(
             """
-            <div style="margin-bottom: 0.2rem;">
-                <h1 style="margin: 0; padding: 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em;">
+            <div style="margin-bottom: 0.15rem;">
+                <h1 style="margin: 0; padding: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em;">
                     🏎️ CURT Inventory Assistant
                 </h1>
-                <div style="font-size: 0.83rem; opacity: 0.75; margin-top: 0.15rem;">
+                <div style="font-size: 0.82rem; opacity: 0.72; margin-top: 0.1rem;">
                     Cairo University Racing Team · Intelligent Workshop Inventory
                 </div>
             </div>
@@ -931,7 +1032,7 @@ def main() -> None:
         st.markdown(
             f"""
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
-                <span style="font-size: 0.73rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7;">
+                <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7;">
                     Active Engine
                 </span>
                 <span class="{status_class}">
@@ -945,7 +1046,7 @@ def main() -> None:
         col_btn1, col_btn2 = st.columns(2)
         with col_btn1:
             if st.button(
-                "🔧 Rule-Based" + (" (Active)" if p1_active else ""),
+                "Rule-Based (P1)" + (" (Active)" if p1_active else ""),
                 key="top_btn_p1",
                 type="primary" if p1_active else "secondary",
                 use_container_width=True,
@@ -956,7 +1057,7 @@ def main() -> None:
         with col_btn2:
             p2_active = not p1_active
             if st.button(
-                "🤖 AI Agent" + (" (Active)" if p2_active else ""),
+                "AI Agent (P2)" + (" (Active)" if p2_active else ""),
                 key="top_btn_p2",
                 type="primary" if p2_active else "secondary",
                 use_container_width=True,
@@ -965,28 +1066,34 @@ def main() -> None:
                     st.session_state.selected_mode = PHASE_2_MODE
                     st.rerun()
 
-    st.markdown("<hr style='margin: 0.2rem 0 0.85rem 0; border: none; border-top: 2px solid rgba(225, 6, 0, 0.2);'>", unsafe_allow_html=True)
+    # Main Tabs: Assistant Chat vs Full-Width Live Inventory
+    tab_chat, tab_inventory = st.tabs(["💬 Assistant Chat", "📦 Live Inventory & Telemetry"])
 
-    render_intro()
+    with tab_chat:
+        # Process pending button clicks (prompt cards or follow-up chips)
+        active_prompt = st.session_state.pending_prompt
+        st.session_state.pending_prompt = None
+        if active_prompt:
+            submit_prompt(active_prompt)
 
-    # Process pending button clicks
-    active_prompt = st.session_state.pending_prompt
-    st.session_state.pending_prompt = None
+        render_intro()
+        render_chat_history()
 
-    # Chat Input Box
-    placeholder_text = (
-        "Ask about inventory (e.g. 'How many brake pads do we have left?', 'Where is the ECU?')..."
-        if p1_active
-        else "Ask naturally in Phase 2 (e.g. 'Can you check if we have enough brake pads and where they are?')..."
-    )
-    user_input = st.chat_input(placeholder_text)
-    if user_input:
-        active_prompt = user_input
+        # Chat Input Box - positioned directly under the last message
+        placeholder_text = (
+            "Ask about inventory (e.g. 'How many brake pads do we have left?', 'Where is the ECU?')..."
+            if p1_active
+            else "Ask naturally in Phase 2 (e.g. 'Can you check if we have enough brake pads and where they are?')..."
+        )
+        user_input = st.chat_input(placeholder_text)
+        if user_input:
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(user_input)
+            submit_prompt(user_input)
+            st.rerun()
 
-    if active_prompt:
-        submit_prompt(active_prompt)
-
-    render_chat_history()
+    with tab_inventory:
+        render_inventory_tab()
 
 
 main()

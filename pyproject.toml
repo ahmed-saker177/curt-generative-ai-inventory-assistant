@@ -14,3 +14,7 @@ dependencies = [
     "uvicorn[standard]>=0.30.0",
     "watchdog>=6.0.0",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
