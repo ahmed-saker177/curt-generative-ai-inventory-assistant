@@ -19,7 +19,7 @@ from ..data.db import (
 
 
 LOGGER = logging.getLogger(__name__)
-DEFAULT_LOW_STOCK_THRESHOLD = 5
+DEFAULT_LOW_STOCK_THRESHOLD = 5     
 
 
 def _normalize(value: str) -> str:
@@ -191,7 +191,7 @@ def flag_shortage(item_name: str) -> dict[str, Any]:
     }
 
 
-INVENTORY_TOOL_DEFINITIONS: list[dict[str, Any]] = [
+INVENTORY_TOOL_DEFINITIONS: list[dict[str, Any]] = [ # TOOL Schemas
     {
         "type": "function",
         "name": "check_stock",
